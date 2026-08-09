@@ -27,4 +27,10 @@ FlutterSecureStorage secureStorage(Ref ref) => const FlutterSecureStorage(
       aOptions: AndroidOptions(
         migrateWithBackup: true,
       ),
+      // The data-protection keychain needs a restricted entitlement, and macOS
+      // refuses to launch an ad-hoc-signed build that carries one. The login
+      // keychain works unsigned.
+      mOptions: MacOsOptions(
+        usesDataProtectionKeychain: false,
+      ),
     );
