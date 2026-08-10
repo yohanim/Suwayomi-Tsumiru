@@ -11,6 +11,7 @@ import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 import 'package:http/http.dart' as http;
 
 import '../../../../constants/endpoints.dart';
+import '../../../../utils/network/gateway_status.dart';
 import '../chapter_download_engine.dart';
 import '../chapter_manifest.dart';
 import '../offline_download_providers.dart' show pageImageExt;
@@ -252,6 +253,13 @@ class DownloadTaskHandler extends TaskHandler {
       // Server unreachable resolving pages: leave `downloading` (resumable) and
       // park. Marking it error here poisoned the whole queue — one blip
       // cascaded through every remaining chapter.
+      //
+      // Nothing else reports this chapter, and main's stop handshake would read
+      // the still-pending queue as work stranded by the shutdown and restart us
+      // straight back into the same dead server. (A park that happens mid-
+      // download says so through its `offline` chapterDone instead — sending
+      // both would let a stale one park a session that had already recovered.)
+      FlutterForegroundTask.sendDataToMain({'kind': 'parked'});
       return true;
     }
     if (urls.isEmpty) {
@@ -442,6 +450,10 @@ class DownloadTaskHandler extends TaskHandler {
         body: body,
       );
       if (res.statusCode == 401 || res.statusCode == 403) return _gqlAuthError;
+      // A proxy answering for a dead origin is the server being unreachable,
+      // not the chapter being broken. Without this the queue marches through a
+      // brief outage condemning every chapter in it.
+      if (isGatewayStatus(res.statusCode)) return _gqlNetworkError;
       if (res.statusCode != 200) return const <String>[];
       final decoded = jsonDecode(res.body) as Map<String, Object?>;
       final data = decoded['data'] as Map<String, Object?>?;
@@ -492,6 +504,9 @@ class DownloadTaskHandler extends TaskHandler {
       if (res.statusCode == 401 || res.statusCode == 403) {
         throw const PageAuthException();
       }
+      // Same as the page-list POST: a gateway speaking for a dead origin leaves
+      // the chapter resumable rather than failing it.
+      if (isGatewayStatus(res.statusCode)) throw const PageOfflineException();
       if (res.statusCode != 200) {
         throw Exception('page fetch failed ($pageUrl): ${res.statusCode}');
       }

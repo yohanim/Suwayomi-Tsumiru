@@ -10,6 +10,7 @@ import 'dart:io';
 import 'package:http/http.dart' as http;
 
 import '../../../../constants/endpoints.dart';
+import '../../../../utils/network/gateway_status.dart';
 import '../chapter_download_engine.dart';
 import '../offline_download_providers.dart' show pageImageExt;
 import '../offline_page_store.dart';
@@ -93,6 +94,9 @@ Future<Object?> postBackgroundGraphql({
       body: jsonEncode({'query': query, 'variables': variables}),
     );
     if (res.statusCode == 401 || res.statusCode == 403) return gqlAuthError;
+    // A proxy answering for a dead origin is an outage, not a bad request —
+    // the same rule the foreground worker and the app itself use.
+    if (isGatewayStatus(res.statusCode)) return gqlNetworkError;
     if (res.statusCode != 200) return null;
     final decoded = jsonDecode(res.body) as Map<String, Object?>;
     return decoded['data'];
@@ -183,6 +187,7 @@ ChapterDownloadEngine buildBackgroundEngine({
     if (res.statusCode == 401 || res.statusCode == 403) {
       throw const PageAuthException();
     }
+    if (isGatewayStatus(res.statusCode)) throw const PageOfflineException();
     if (res.statusCode != 200) {
       throw Exception('page fetch failed ($pageUrl): ${res.statusCode}');
     }

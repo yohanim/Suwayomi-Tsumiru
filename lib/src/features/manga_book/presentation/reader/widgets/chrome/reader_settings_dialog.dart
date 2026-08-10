@@ -68,7 +68,6 @@ Future<void> showReaderSettingsSheet({
   required int mangaId,
   required ValueNotifier<bool> visibility,
   required ValueNotifier<double> readerPadding,
-  required ValueNotifier<double> magnifierSize,
 }) {
   final navigator = Navigator.of(context);
   final route = _ReaderSettingsSheetRoute<void>(
@@ -78,7 +77,6 @@ Future<void> showReaderSettingsSheet({
     builder: (_) => ReaderSettingsDialog(
       mangaId: mangaId,
       readerPadding: readerPadding,
-      magnifierSize: magnifierSize,
     ),
   );
 
@@ -121,15 +119,13 @@ class ReaderSettingsDialog extends HookConsumerWidget {
     super.key,
     required this.mangaId,
     required this.readerPadding,
-    required this.magnifierSize,
   });
 
   final int mangaId;
 
-  /// The wrapper's live padding/magnifier notifiers — shared so slider drags
+  /// The wrapper's live padding notifier — shared so slider drags
   /// keep updating the open reader immediately, exactly like the old drawer.
   final ValueNotifier<double> readerPadding;
-  final ValueNotifier<double> magnifierSize;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -183,7 +179,6 @@ class ReaderSettingsDialog extends HookConsumerWidget {
                   ReadingModeTab(
                     mangaId: mangaId,
                     readerPadding: readerPadding,
-                    magnifierSize: magnifierSize,
                   ),
                   GeneralTab(mangaId: mangaId),
                   CustomFilterTab(mangaId: mangaId),

@@ -28,6 +28,11 @@ import 'catchup_work_spec.dart';
 const _maxChaptersPerRun = 10;
 const _runBudget = Duration(minutes: 7);
 
+/// Attempts a single chapter gets across runs before its obligation is dropped.
+/// Without this the ledger never converges: a chapter the server cannot serve
+/// stays pending and is retried on every scheduled wake, forever.
+const _maxChapterAttempts = 5;
+
 /// Download the ledger's obligations inside the WorkManager task. Returns
 /// false only on transient failure (scheduler retries).
 ///
@@ -135,6 +140,7 @@ Future<bool> runCatchupDownloads({
 
       final serverFetch = {...ledger.pendingServerFetch};
       final retries = {...ledger.serverFetchRetries};
+      final dlRetries = {...ledger.downloadRetries};
       final pending = {...ledger.pendingDownloads};
 
       for (final chapterId in desired.difference(present)) {
@@ -145,11 +151,26 @@ Future<bool> runCatchupDownloads({
         final row = chapters.byId[chapterId];
         if (row == null) continue;
 
+        // A budget per hop, spent only on that hop's own failures. Sharing one
+        // meant a slow source could exhaust a chapter before the device had
+        // tried at all, and a chapter neither hop can produce is otherwise
+        // retried on every wake for the life of the install.
+        //
+        // Counters outlive the obligation they gave up on: `desired` is rebuilt
+        // from the spec each run, so a cleared counter just starts the attempts
+        // over. Success clears them; so does the chapter leaving the window.
         if (!row.serverIsDownloaded) {
-          // Two-hop: server first. Bounded retries; a dead source stops
-          // burning the budget and surfaces via the foreground banner.
           final spent = retries[chapterId] ?? 0;
-          if (spent >= 5) continue;
+          if (spent >= _maxChapterAttempts) {
+            // Stop asking, but keep the obligation: it is what tells the ledger
+            // which manga this chapter belongs to, so the window cleanup below
+            // can drop the counter with it once the chapter is no longer
+            // wanted. Skipping costs nothing — the gate is ahead of any I/O.
+            serverFetch.remove(chapterId);
+            continue;
+          }
+          // Two-hop: ask the server to fetch it from the source first. A failed
+          // ask is the server not being there, which costs nothing.
           final ok = await _enqueueServerDownload(target, record, chapterId);
           if (ok) {
             serverFetch[chapterId] = mangaId;
@@ -158,7 +179,13 @@ Future<bool> runCatchupDownloads({
           continue;
         }
 
-        final staged = await _downloadOneChapter(
+        // On the server now, so this is a fresh job with its own budget however
+        // many runs the fetch above took.
+        serverFetch.remove(chapterId);
+        final dlSpent = dlRetries[chapterId] ?? 0;
+        if (dlSpent >= _maxChapterAttempts) continue;
+
+        final attempt = await _downloadOneChapter(
           target: target,
           record: record,
           broker: broker,
@@ -169,25 +196,41 @@ Future<bool> runCatchupDownloads({
           mangaId: mangaId,
           generation: mangaSpec.generationOf(chapterId),
         );
-        if (staged > 0) {
+        if (attempt.bytes > 0) {
           downloaded++;
-          runBytes += staged;
+          runBytes += attempt.bytes;
           pending.remove(chapterId);
           serverFetch.remove(chapterId);
           retries.remove(chapterId);
+          dlRetries.remove(chapterId);
+        } else if (!attempt.transient) {
+          dlRetries[chapterId] = dlSpent + 1;
         }
       }
 
       // Drop obligations that are satisfied (present) or no longer desired
-      // (rule window moved on) — either way there is nothing left to do.
-      pending.removeWhere(
-        (c, m) => m == mangaId && (!desired.contains(c) || present.contains(c)),
-      );
+      // (rule window moved on) — either way there is nothing left to do. The
+      // attempt counters go with them: they exist to stop a chapter being
+      // retried while it is still wanted, so one left behind would meet a
+      // re-added chapter with an already-spent budget.
+      final done = {
+        for (final e in pending.entries)
+          if (e.value == mangaId &&
+              (!desired.contains(e.key) || present.contains(e.key)))
+            e.key,
+      };
+      for (final c in done) {
+        pending.remove(c);
+        serverFetch.remove(c);
+        retries.remove(c);
+        dlRetries.remove(c);
+      }
 
       ledger = ledger.copyWith(
         pendingDownloads: pending,
         pendingServerFetch: serverFetch,
         serverFetchRetries: retries,
+        downloadRetries: dlRetries,
       );
       await catchupStore.writeLedger(config.serverId, ledger);
     }
@@ -197,16 +240,26 @@ Future<bool> runCatchupDownloads({
   }
 }
 
-CatchupLedger _dropManga(CatchupLedger ledger, int mangaId) => ledger.copyWith(
-  pendingDownloads: {
+CatchupLedger _dropManga(CatchupLedger ledger, int mangaId) {
+  final gone = {
     for (final e in ledger.pendingDownloads.entries)
-      if (e.value != mangaId) e.key: e.value,
-  },
-  pendingServerFetch: {
+      if (e.value == mangaId) e.key,
     for (final e in ledger.pendingServerFetch.entries)
-      if (e.value != mangaId) e.key: e.value,
-  },
-);
+      if (e.value == mangaId) e.key,
+  };
+  Map<int, int> without(Map<int, int> m) => {
+    for (final e in m.entries)
+      if (!gone.contains(e.key)) e.key: e.value,
+  };
+  return ledger.copyWith(
+    pendingDownloads: without(ledger.pendingDownloads),
+    pendingServerFetch: without(ledger.pendingServerFetch),
+    // The rule is gone, so the attempts spent under it mean nothing — leaving
+    // them would meet the manga with a spent budget if it came back.
+    serverFetchRetries: without(ledger.serverFetchRetries),
+    downloadRetries: without(ledger.downloadRetries),
+  );
+}
 
 /// Chapters already recorded in the un-replayed log, or already committed on
 /// disk — work the spec's snapshot can't know about yet.
@@ -328,7 +381,13 @@ Future<bool> _enqueueServerDownload(
 /// check the row the way a commit must. It fills staging and leaves an adoption
 /// record; the next launch commits it on the main isolate. Timing is unchanged
 /// for the user: adoption already happened at replay.
-Future<int> _downloadOneChapter({
+/// Whether an attempt failed because the chapter cannot be served, or merely
+/// because the server was not there at the time. Only the first is worth
+/// spending an attempt on — an outage would otherwise abandon the chapter for
+/// good after a few nights.
+typedef ChapterAttempt = ({int bytes, bool transient});
+
+Future<ChapterAttempt> _downloadOneChapter({
   required BackgroundServerTarget target,
   required BackgroundTokenRecord Function() record,
   required TokenBroker broker,
@@ -345,7 +404,10 @@ Future<int> _downloadOneChapter({
     broker: broker,
     chapterId: row.id,
   );
-  if (urls == null || urls.isEmpty) return 0;
+  // null: server unreachable. empty: it answered, and has no pages for this
+  // chapter.
+  if (urls == null) return (bytes: 0, transient: true);
+  if (urls.isEmpty) return (bytes: 0, transient: false);
 
   final indices = [for (var i = 0; i < urls.length; i++) i];
   // The generation comes from the spec, not a hardcoded 0: a chapter that was
@@ -389,7 +451,9 @@ Future<int> _downloadOneChapter({
     isCancelled: () => false,
     onPageStored: (_, __, ___) async {},
   );
-  if (!outcome.succeeded) return 0;
+  if (!outcome.succeeded) {
+    return (bytes: 0, transient: outcome.offline || outcome.authFailed);
+  }
 
   // Measured off staging rather than this run's writes: a resumed chapter
   // fetched only what was missing, and the ledger's cap accounting wants the
@@ -408,5 +472,5 @@ Future<int> _downloadOneChapter({
       isRead: row.isRead,
     ),
   );
-  return bytes;
+  return (bytes: bytes, transient: false);
 }

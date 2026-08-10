@@ -9,7 +9,6 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 
-import 'app_constants.dart';
 import 'db_keys.dart';
 
 const kTabSize = Size.fromHeight(kAppBarBottomHeight);
@@ -20,31 +19,6 @@ Size kCalculateAppBarBottomSize(List<bool> checks) {
   final multiplier =
       checks.map((e) => e ? 1 : 0).toList().fold(0, (v1, v2) => v1 + v2);
   return Size.fromHeight(kAppBarBottomHeight * multiplier);
-}
-
-Offset kMagnifierPosition(Offset position, Size size, double multiplier) =>
-    Offset(
-      max(
-        min(
-          position.dx - (kMagnifierSize.width * multiplier * .5),
-          size.width - (kMagnifierSize.width * multiplier * .5),
-        ),
-        -(kMagnifierSize.width * multiplier * .5),
-      ),
-      max(
-        min(
-          position.dy - (kMagnifierSize.height * multiplier),
-          size.height - (kMagnifierSize.height * multiplier * 1.25),
-        ),
-        -(kMagnifierSize.height * multiplier * .5),
-      ),
-    );
-
-Offset kMagnifierOffset(Offset position, Size size, double multiplier) {
-  return Offset(
-    0,
-    max(0, min(position.dy, (kMagnifierSize.height * multiplier))) * .5,
-  );
 }
 
 /// Constant sizes to be used in the app (paddings, gaps, rounded corners etc.)

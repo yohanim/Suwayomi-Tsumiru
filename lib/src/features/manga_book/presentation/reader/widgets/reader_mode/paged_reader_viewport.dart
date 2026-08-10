@@ -609,7 +609,7 @@ class _PagedReaderViewportState extends State<PagedReaderViewport>
     if (_longPressActive) {
       ReaderInputScope.maybeOf(
         context,
-      )?.onLongPressMoveUpdate(event.localPosition);
+      )?.onLongPressMoveUpdate?.call(event.localPosition);
       return;
     }
 
@@ -769,6 +769,9 @@ class _PagedReaderViewportState extends State<PagedReaderViewport>
 
   void _startLongPressTimer(Offset position) {
     if (_isTransitionSlot(_displayIndex)) return;
+    // Nothing consumes a long press: don't run a timer that would swallow the
+    // gesture and, with it, the tap that was meant to turn the page.
+    if (ReaderInputScope.maybeOf(context)?.onLongPressStart == null) return;
     _longPressTimer?.cancel();
     _longPressTimer = Timer(_longPressDelay, () {
       if (!mounted ||
@@ -778,7 +781,7 @@ class _PagedReaderViewportState extends State<PagedReaderViewport>
         return;
       }
       _longPressActive = true;
-      ReaderInputScope.maybeOf(context)?.onLongPressStart(position);
+      ReaderInputScope.maybeOf(context)?.onLongPressStart?.call(position);
     });
   }
 
@@ -793,9 +796,9 @@ class _PagedReaderViewportState extends State<PagedReaderViewport>
     _longPressActive = false;
     final callbacks = ReaderInputScope.maybeOf(context);
     if (cancelled) {
-      callbacks?.onLongPressCancel();
+      callbacks?.onLongPressCancel?.call();
     } else {
-      callbacks?.onLongPressEnd();
+      callbacks?.onLongPressEnd?.call();
     }
   }
 
@@ -1245,7 +1248,11 @@ class _PagedReaderViewportState extends State<PagedReaderViewport>
         if (_dragOffset != 0) _scheduleRestCheck();
         return GestureDetector(
           behavior: HitTestBehavior.opaque,
-          onLongPress: _claimLongPressArena,
+          // Only claim the arena when a long press has somewhere to go.
+          onLongPress: ReaderInputScope.maybeOf(context)?.onLongPressStart ==
+                  null
+              ? null
+              : _claimLongPressArena,
           child: Listener(
             behavior: HitTestBehavior.opaque,
             onPointerDown: _onPointerDown,

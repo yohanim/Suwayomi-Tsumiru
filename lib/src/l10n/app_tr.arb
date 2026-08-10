@@ -569,10 +569,6 @@
   "@quickSearchSource": {
     "description": "Quick Open Hint text for Source S with prefill '@S'"
   },
-  "readerMagnifierSize": "Büyüteç Boyutu",
-  "@readerMagnifierSize": {
-    "description": "Slider title text for Reader Magnifier Size"
-  },
   "readerMode": "Okuma Modu",
   "@readerMode": {
     "description": "Popup title and Button text of Reader Mode popup"

@@ -30,8 +30,8 @@ import '../../../../domain/chapter_page/chapter_page_model.dart';
 import 'image_clipboard.dart';
 
 /// "Show actions on long tap": long-pressing a reader page opens this
-/// page-actions bar instead of the magnifier — a compact horizontal row of
-/// icon buttons docked at the bottom. On mobile it's a single-page set:
+/// page-actions bar — a compact horizontal row of icon buttons docked at the
+/// bottom. On mobile it's a single-page set:
 /// Copy (the image itself, to the clipboard), Share image, Save to gallery.
 /// "Set as cover" is omitted — Suwayomi exposes no cover mutation
 /// (schema `UpdateMangaPatchInput` is `inLibrary`-only). "Open in web" is shown

@@ -116,8 +116,9 @@ void main() {
     Future<Never> boom() async => throw const SocketException('unreachable');
 
     test(
-        'serves per-category counts, keeps hidden meta, drops empty tabs, '
-        'and homes uncategorized manga in Default', () async {
+        'serves per-category counts, keeps hidden meta, keeps categories with '
+        'nothing downloaded, and homes uncategorized manga in Default',
+        () async {
       final sync = OfflineSync(db);
       await sync.syncCategories([
         cat(1, 'Visible', order: 1),
@@ -139,8 +140,9 @@ void main() {
       // Default synthesized for the uncategorized download.
       expect(byId[0]?.mangas.totalCount, 1);
       expect(byId[1]?.mangas.totalCount, 1);
-      // No downloaded manga -> no tab, same as nonZeroCategoryList online.
-      expect(byId.containsKey(2), isFalse);
+      // Nothing downloaded from it, but the category still exists -- dropping
+      // it made a user's categories look deleted while offline.
+      expect(byId[2]?.mangas.totalCount, 0);
       // Hidden flag survives the round trip into the synthetic DTO.
       expect(byId[3]?.isHidden, isTrue);
     });

@@ -25,7 +25,6 @@ import 'widgets/reader_initial_overlay_tile/reader_initial_overlay_tile.dart';
 import 'widgets/reader_keep_screen_on_tile/reader_keep_screen_on_tile.dart';
 import 'widgets/reader_last_page_swipe_tile/reader_last_page_swipe_tile.dart';
 import 'widgets/reader_left_handed_seekbar_tile/reader_left_handed_seekbar_tile.dart';
-import 'widgets/reader_magnifier_size_slider/reader_magnifier_size_slider.dart';
 import 'widgets/reader_mode_tile/reader_mode_tile.dart';
 import 'widgets/reader_navigation_layout_tile/reader_navigation_layout_tile.dart';
 import 'widgets/long_strip_width_limit_slider/long_strip_width_limit_slider.dart';
@@ -138,7 +137,6 @@ class ReaderSettingsScreen extends ConsumerWidget {
           // Not long-strip only: reader_wrapper pads whichever axis you are
           // not scrolling, so paged reading uses it too.
           const ReaderPaddingSlider(),
-          const ReaderMagnifierSizeSlider(),
           if (!kIsWeb && (Platform.isAndroid || Platform.isIOS)) ...[
             const ReaderKeepScreenOnTile(),
             const ReaderIgnoreSafeAreaTile(),

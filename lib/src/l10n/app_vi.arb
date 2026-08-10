@@ -523,10 +523,6 @@
   "@reader": {
     "description": "Screen title and Button text of Reader screen"
   },
-  "readerMagnifierSize": "Kích thước kính lúp",
-  "@readerMagnifierSize": {
-    "description": "Slider title text for Reader Magnifier Size"
-  },
   "readerMode": "Kiểu đọc",
   "@readerMode": {
     "description": "Popup title and Button text of Reader Mode popup"

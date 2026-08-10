@@ -143,6 +143,13 @@ List<CategoryDto>? categoryListQuery(
 @riverpod
 AsyncValue<List<CategoryDto>?> nonZeroCategoryList(Ref ref) {
   final categoryList = ref.watch(categoryControllerProvider);
+  // Offline the count is "how much of this category is downloaded", so zero
+  // means not-downloaded-yet, not empty. Dropping those took the whole tab bar
+  // with them whenever a user's downloads sat in one category — their other
+  // categories looked deleted, with no way to reach them.
+  final offline = ref.watch(viewOfflineNowProvider) ||
+      ref.watch(serverUnreachableProvider);
+  if (offline) return categoryList;
   return categoryList.copyWithData((_) => categoryList.value
       ?.where((element) => element.mangas.totalCount > 0)
       .toList());

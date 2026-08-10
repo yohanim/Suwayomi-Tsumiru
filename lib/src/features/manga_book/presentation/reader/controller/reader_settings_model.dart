@@ -12,7 +12,6 @@ import '../../../../../constants/enum.dart';
 import '../../../../settings/presentation/reader/widgets/reader_filter_prefs/reader_filter_prefs.dart';
 import '../../../../settings/presentation/reader/widgets/reader_general_prefs/reader_general_prefs.dart';
 import '../../../../settings/presentation/reader/widgets/reader_invert_tap_tile/reader_invert_tap_tile.dart';
-import '../../../../settings/presentation/reader/widgets/reader_magnifier_size_slider/reader_magnifier_size_slider.dart';
 import '../../../../settings/presentation/reader/widgets/reader_mode_tile/reader_mode_tile.dart';
 import '../../../../settings/presentation/reader/widgets/reader_navigation_layout_tile/reader_navigation_layout_tile.dart';
 import '../../../../settings/presentation/reader/widgets/reader_orientation/reader_orientation.dart';
@@ -51,13 +50,6 @@ abstract final class ReaderSettings {
     perSeriesKey: MangaMetaKeys.readerPadding,
     global: readerPaddingKeyProvider,
     fallback: DBKeys.readerPadding.initial as double,
-  );
-
-  static final magnifierSize = ReaderSetting<double>(
-    scope: ReaderSettingScope.perSeries,
-    perSeriesKey: MangaMetaKeys.readerMagnifierSize,
-    global: readerMagnifierSizeKeyProvider,
-    fallback: DBKeys.readerMagnifierSize.initial as double,
   );
 
   /// Global-only today: the reader never reads the per-series invert meta.
@@ -430,7 +422,6 @@ abstract class ReaderSettingsState with _$ReaderSettingsState {
     required ReaderMode readerMode,
     required ReaderNavigationLayout navigationLayout,
     required double sidePadding,
-    required double magnifierSize,
     required bool invertTap,
     required ReaderOrientation readerOrientation,
     required TapInvert tapInvert,
@@ -559,7 +550,6 @@ class ReaderSettingsModel extends _$ReaderSettingsModel {
   late ReaderOrientationKey _readerOrientationKey;
   late ReaderTapInvertKey _readerTapInvertKey;
   late ReaderPaddingKey _readerPaddingKey;
-  late ReaderMagnifierSizeKey _readerMagnifierSizeKey;
 
   @override
   ReaderSettingsState build(int mangaId) {
@@ -631,7 +621,6 @@ class ReaderSettingsModel extends _$ReaderSettingsModel {
     _readerOrientationKey = ref.read(readerOrientationKeyProvider.notifier);
     _readerTapInvertKey = ref.read(readerTapInvertKeyProvider.notifier);
     _readerPaddingKey = ref.read(readerPaddingKeyProvider.notifier);
-    _readerMagnifierSizeKey = ref.read(readerMagnifierSizeKeyProvider.notifier);
     final meta =
         ref.watch(mangaWithIdProvider(mangaId: mangaId)).value?.metaData;
     return ReaderSettingsState(
@@ -640,8 +629,6 @@ class ReaderSettingsModel extends _$ReaderSettingsModel {
           .resolveWith(ref, meta?.readerNavigationLayout),
       sidePadding:
           ReaderSettings.sidePadding.resolveWith(ref, meta?.readerPadding),
-      magnifierSize: ReaderSettings.magnifierSize
-          .resolveWith(ref, meta?.readerMagnifierSize),
       invertTap: ReaderSettings.invertTap.resolveWith(ref, null),
       readerOrientation: ReaderSettings.readerOrientation
           .resolveWith(ref, meta?.readerOrientation),
@@ -903,14 +890,6 @@ class ReaderSettingsModel extends _$ReaderSettingsModel {
           : _clearMetaThenWriteGlobal(
               MangaMetaKeys.readerPadding,
               () => _readerPaddingKey.update(value),
-            );
-
-  Future<void> setMagnifierSize(double value, {bool perSeries = true}) =>
-      perSeries
-          ? _patchMeta(MangaMetaKeys.readerMagnifierSize, value)
-          : _clearMetaThenWriteGlobal(
-              MangaMetaKeys.readerMagnifierSize,
-              () => _readerMagnifierSizeKey.update(value),
             );
 
   Future<void> setReaderOrientation(

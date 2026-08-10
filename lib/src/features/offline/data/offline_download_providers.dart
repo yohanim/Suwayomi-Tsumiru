@@ -64,18 +64,22 @@ bool get _useBgService => isAndroidNative;
 /// queued into drift — starts the FGS worker on Android, else drains via the
 /// main-isolate pump. Centralised (and overridable in tests) so no trigger can
 /// ever again silently rely on the Android-disabled pump.
-final downloadStarterProvider = Provider<Future<void> Function()>((Ref ref) {
-  return () async {
-    if (!ref.read(offlineActiveProvider)) return;
-    if (isAndroidNative) {
-      await ref
-          .read(backgroundDownloadControllerProvider)
-          .ensureServiceRunning();
-    } else {
-      await ref.read(offlineDownloadCoordinatorProvider)?.pumpDownloads();
-    }
-  };
-});
+/// Pass `userInitiated` when someone pressed something: it overrides the
+/// backoff Android applies while the server is unreachable, which an automatic
+/// pass must not.
+final downloadStarterProvider =
+    Provider<Future<void> Function({bool userInitiated})>((Ref ref) {
+      return ({bool userInitiated = false}) async {
+        if (!ref.read(offlineActiveProvider)) return;
+        if (isAndroidNative) {
+          await ref
+              .read(backgroundDownloadControllerProvider)
+              .requestStart(userInitiated: userInitiated);
+        } else {
+          await ref.read(offlineDownloadCoordinatorProvider)?.pumpDownloads();
+        }
+      };
+    });
 
 /// Pause or resume ALL on-device downloads. Persists the flag (survives a
 /// restart) and acts immediately on the active pipeline (FGS on Android,
@@ -243,9 +247,10 @@ Future<void> saveChapterToDevice(WidgetRef ref, int chapterId) async {
   }
   // Queue it (drift `queued` is the single source of truth). On Android the
   // foreground-service worker owns the downloading; elsewhere the main-isolate
-  // pump drains it.
-  await coordinator.queueChapter(chapterId);
-  await ref.read(downloadStarterProvider)();
+  // pump drains it. Both callers are the user pressing save or retry, which is
+  // the one thing allowed to revive a terminally-failed chapter.
+  await coordinator.queueChapter(chapterId, allowErrored: true);
+  await ref.read(downloadStarterProvider)(userInitiated: true);
 }
 
 /// Record reading progress for a chapter. Persists it to the on-device catalog
@@ -1399,7 +1404,7 @@ Future<void> reconcileMangaWidget(WidgetRef ref, int mangaId) async {
   );
   // Start downloading the freshly-queued chapters. THIS was the missing wire
   // that made "Download all / unread" silently do nothing on Android.
-  await ref.read(downloadStarterProvider)();
+  await ref.read(downloadStarterProvider)(userInitiated: true);
 }
 
 /// Container entry — same as [reconcileMangaWidget] but survives the caller's

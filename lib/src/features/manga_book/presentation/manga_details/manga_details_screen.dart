@@ -20,6 +20,8 @@ import '../../../../utils/theme/brand.dart';
 import '../../../../widgets/emoticons.dart';
 import '../../../library/presentation/category/controller/edit_category_controller.dart';
 import '../../../library/presentation/library/controller/library_controller.dart';
+import '../../../offline/data/server_reachability.dart';
+import '../../../offline/presentation/server_unreachable_banner.dart';
 import '../../../settings/presentation/appearance/widgets/show_recommendations/show_recommendations_tile.dart';
 import '../../../library/presentation/library/controller/library_manga_list.dart';
 import '../../../migration/domain/migration_models.dart';
@@ -55,6 +57,7 @@ class MangaDetailsScreen extends HookConsumerWidget {
     );
 
     final selectedChapters = useState<Map<int, ChapterDto>>({});
+    final offline = ref.watch(serverUnreachableProvider);
 
     // Drives the immersive app bar: transparent over the hero, fading to the
     // surface color as the user scrolls past it. Updated from a
@@ -159,8 +162,9 @@ class MangaDetailsScreen extends HookConsumerWidget {
         context,
         (data) => Scaffold(
           // Immersive hero: the blurred cover backdrop (top of the body) shows
-          // through behind a transparent app bar.
-          extendBodyBehindAppBar: selectedChapters.value.isEmpty,
+          // through behind a transparent app bar. Given up while the banner is
+          // in the way, so the cover starts below it rather than behind it.
+          extendBodyBehindAppBar: selectedChapters.value.isEmpty && !offline,
           appBar: selectedChapters.value.isNotEmpty
               ? AppBar(
                   leading: IconButton(
@@ -391,7 +395,13 @@ class MangaDetailsScreen extends HookConsumerWidget {
                       },
                     )
                   : null,
-          body: Stack(
+          // Banner above the content, not over it: the hero owns the whole top
+          // of this screen and a floating banner cuts the cover in half.
+          body: Column(
+            children: [
+              ServerUnreachableBanner(onRetry: refresh),
+              Expanded(
+                  child: Stack(
             children: [
               NotificationListener<ScrollNotification>(
                 onNotification: (n) {
@@ -439,6 +449,8 @@ class MangaDetailsScreen extends HookConsumerWidget {
                     chapterList: filteredChapterList.value,
                   ),
                 ),
+            ],
+                  )),
             ],
           ),
         ),

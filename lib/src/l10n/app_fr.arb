@@ -417,10 +417,6 @@
   "@readerPadding": {
     "description": "Slider title text for Reader Padding"
   },
-  "readerMagnifierSize": "Taille de la loupe",
-  "@readerMagnifierSize": {
-    "description": "Slider title text for Reader Magnifier Size"
-  },
   "reddit": "Reddit",
   "@reddit": {
     "description": "Reddit app title"

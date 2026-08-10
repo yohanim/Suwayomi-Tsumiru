@@ -114,7 +114,6 @@ void main() {
             body: ReadingModeTab(
               mangaId: 1,
               readerPadding: ValueNotifier(0.0),
-              magnifierSize: ValueNotifier(1.0),
             ),
           ),
         ),

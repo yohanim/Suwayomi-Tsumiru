@@ -507,10 +507,6 @@
   "@nsfw18": {
     "description": "18+ tag Text to show in extensions list"
   },
-  "readerMagnifierSize": "放大大小",
-  "@readerMagnifierSize": {
-    "description": "Slider title text for Reader Magnifier Size"
-  },
   "chapterSortUploadDate": "按上傳日期",
   "@chapterSortUploadDate": {
     "description": "Radio button text for sort by Upload Date"

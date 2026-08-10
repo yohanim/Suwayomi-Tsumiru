@@ -71,7 +71,6 @@ class _SheetHost extends ConsumerWidget {
             mangaId: 1,
             visibility: visibility,
             readerPadding: ValueNotifier(0.0),
-            magnifierSize: ValueNotifier(1.0),
           ),
           child: const Text('open'),
         ),

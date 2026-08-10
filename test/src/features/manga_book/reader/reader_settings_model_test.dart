@@ -18,7 +18,6 @@ import 'package:tsumiru/src/features/manga_book/presentation/manga_details/contr
 import 'package:tsumiru/src/features/manga_book/presentation/reader/controller/reader_setting.dart';
 import 'package:tsumiru/src/features/manga_book/presentation/reader/controller/reader_settings_model.dart';
 import 'package:tsumiru/src/features/settings/presentation/reader/widgets/reader_invert_tap_tile/reader_invert_tap_tile.dart';
-import 'package:tsumiru/src/features/settings/presentation/reader/widgets/reader_magnifier_size_slider/reader_magnifier_size_slider.dart';
 import 'package:tsumiru/src/features/settings/presentation/reader/widgets/reader_orientation/reader_orientation.dart';
 import 'package:tsumiru/src/features/settings/presentation/reader/widgets/reader_padding_slider/reader_padding_slider.dart';
 import 'package:tsumiru/src/features/settings/presentation/reader/widgets/reader_pinch_to_zoom/reader_pinch_to_zoom.dart';
@@ -135,10 +134,6 @@ void main() {
       expect(
           ReaderSettings.sidePadding.perSeriesKey, MangaMetaKeys.readerPadding);
 
-      expect(ReaderSettings.magnifierSize.scope, ReaderSettingScope.perSeries);
-      expect(ReaderSettings.magnifierSize.perSeriesKey,
-          MangaMetaKeys.readerMagnifierSize);
-
       // Global-only today: the reader never reads the per-series invert meta.
       expect(ReaderSettings.invertTap.scope, ReaderSettingScope.global);
       expect(ReaderSettings.invertTap.perSeriesKey, isNull);
@@ -191,27 +186,23 @@ void main() {
         'flutter_readerMode': 'singleHorizontalRTL',
         'flutter_readerNavigationLayout': 'edge',
         'flutter_readerPadding': '0.2',
-        'flutter_readerMagnifierSize': '2.5',
       }));
 
       final state = await _resolvedState(container);
       expect(state.readerMode, ReaderMode.singleHorizontalRTL);
       expect(state.navigationLayout, ReaderNavigationLayout.edge);
       expect(state.sidePadding, 0.2);
-      expect(state.magnifierSize, 2.5);
     });
 
     test('seeds from globals/sentinels when no per-series meta', () async {
       final container = await _container(_manga());
       container.read(readerPaddingKeyProvider.notifier).update(0.25);
-      container.read(readerMagnifierSizeKeyProvider.notifier).update(1.5);
       container.read(invertTapProvider.notifier).update(true);
 
       final state = await _resolvedState(container);
       expect(state.readerMode, ReaderMode.defaultReader);
       expect(state.navigationLayout, ReaderNavigationLayout.defaultNavigation);
       expect(state.sidePadding, 0.25);
-      expect(state.magnifierSize, 1.5);
       expect(state.invertTap, true);
     });
 
@@ -220,7 +211,6 @@ void main() {
 
       final state = await _resolvedState(container);
       expect(state.sidePadding, 0.0);
-      expect(state.magnifierSize, 1.0);
       expect(state.invertTap, false);
       expect(state.pinchToZoom, true);
       expect(state.doubleTapToZoom, true);

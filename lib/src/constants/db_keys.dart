@@ -29,7 +29,6 @@ enum DBKeys {
   authUsername(null),
   readerMode(ReaderMode.singleHorizontalRTL),
   readerPadding(0.0),
-  readerMagnifierSize(1.0),
   // Desktop mouse wheel. Flutter's Linux embedder moves 53px per notch, which
   // reads slower than the browser WebUI runs in; 1.7 lines them up.
   readerMouseScrollSpeed(1.7),

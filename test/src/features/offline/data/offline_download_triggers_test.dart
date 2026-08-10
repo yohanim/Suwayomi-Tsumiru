@@ -78,7 +78,9 @@ void main() {
             buildCoordinator(),
           ),
           offlineDownloadManagerProvider.overrideWithValue(buildManager()),
-          downloadStarterProvider.overrideWithValue(() async => startCalls++),
+          downloadStarterProvider.overrideWithValue(
+            ({bool userInitiated = false}) async => startCalls++,
+          ),
         ],
         child: Consumer(
           builder: (_, ref, __) {

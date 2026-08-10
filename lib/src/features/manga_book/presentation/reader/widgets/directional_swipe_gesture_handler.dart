@@ -20,9 +20,7 @@ class DirectionalSwipeGestureHandler extends HookWidget {
     super.key,
     required this.child,
     required this.onTap,
-    required this.onLongPressStart,
-    required this.onLongPressEnd,
-    required this.onLongPressMoveUpdate,
+    this.onLongPressStart,
     required this.scrollDirection,
     required this.readerSwipeChapterToggle,
     required this.lastPageSwipeEnabled,
@@ -38,9 +36,9 @@ class DirectionalSwipeGestureHandler extends HookWidget {
 
   final Widget child;
   final VoidCallback onTap;
-  final void Function(LongPressStartDetails) onLongPressStart;
-  final void Function(LongPressEndDetails) onLongPressEnd;
-  final void Function(LongPressMoveUpdateDetails) onLongPressMoveUpdate;
+  /// Null when nothing consumes a long press — [GestureDetector] then skips
+  /// the recognizer entirely rather than claiming the gesture for a no-op.
+  final void Function(LongPressStartDetails)? onLongPressStart;
   final Axis scrollDirection;
   final bool readerSwipeChapterToggle;
   final bool lastPageSwipeEnabled;
@@ -84,8 +82,6 @@ class DirectionalSwipeGestureHandler extends HookWidget {
     return GestureDetector(
       behavior: HitTestBehavior.translucent,
       onLongPressStart: onLongPressStart,
-      onLongPressEnd: onLongPressEnd,
-      onLongPressMoveUpdate: onLongPressMoveUpdate,
       onTap: onTap,
       child: child,
     );

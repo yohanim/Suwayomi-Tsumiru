@@ -384,10 +384,6 @@
   "@readerScrollAnimation": {
     "description": "Switch title to Disable scroll animation in reader screen"
   },
-  "readerMagnifierSize": "Tamanho da Lupa",
-  "@readerMagnifierSize": {
-    "description": "Slider title text for Reader Magnifier Size"
-  },
   "quickSearchCategoryManga": "Pesquisa o Manga 'M' na categoria 'C'",
   "@quickSearchCategoryManga": {
     "description": "Quick Open Hint text for searching Manga M in Category C with prefill '#C/M'"

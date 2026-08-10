@@ -38,8 +38,12 @@ class RecommendsRow extends ConsumerWidget {
     }
     final recs = ref.watch(mangaRecommendationsProvider(mangaId));
     // Drop the whole section when it resolves to nothing, matching Komikku only
-    // showing the row when the related list is non-empty.
-    if (recs.hasValue && recs.value!.isEmpty) return const SizedBox.shrink();
+    // showing the row when the related list is non-empty. A failed fetch counts
+    // as nothing: hiding only the inner list left the header, its dividers and
+    // 200px of empty space sitting in the middle of the page.
+    if (recs.hasError || (recs.hasValue && recs.value!.isEmpty)) {
+      return const SizedBox.shrink();
+    }
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -67,6 +71,7 @@ class RecommendsRow extends ConsumerWidget {
           height: 200,
           child: recs.when(
             loading: () => const Center(child: CircularProgressIndicator()),
+            // Unreachable: an error hides the section above.
             error: (_, __) => const SizedBox.shrink(),
             data: (list) => ListView.separated(
               scrollDirection: Axis.horizontal,

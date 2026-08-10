@@ -141,12 +141,7 @@ Future<void> initOfflineDownloads(ProviderContainer container) async {
     db: db,
     store: container.read(offlinePageStoreProvider),
   );
-  final errored = await db.chaptersInState(OfflineDeviceState.error);
-  for (final c in errored) {
-    await db.setChapterDeviceState(c.id, OfflineDeviceState.queued);
-  }
-  if (errored.isNotEmpty) {
-    logger.i('Offline: requeued ${errored.length} previously-errored chapters');
-  }
+  // `error` is terminal: this used to promote every errored chapter on each
+  // launch, retrying forever. The user retries from the save button.
   await coord.pumpDownloads();
 }

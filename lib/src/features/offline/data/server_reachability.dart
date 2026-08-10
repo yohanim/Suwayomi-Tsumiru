@@ -14,8 +14,8 @@ part 'server_reachability.g.dart';
 /// Set by the offline-fallback read path: `true` when a fetch hits a connection
 /// error (even when cached data is then served, which would otherwise hide the
 /// outage from the UI), `false` on any successful fetch. Watched by
-/// `ServerUnreachableBannerHost` to surface an app-wide banner, so a user
-/// browsing stale cached data still knows they're offline.
+/// `ServerUnreachableBanner`, which the library and series screens mount, so a
+/// user browsing stale cached data still knows they're offline.
 @Riverpod(keepAlive: true)
 class ServerUnreachable extends _$ServerUnreachable {
   @override

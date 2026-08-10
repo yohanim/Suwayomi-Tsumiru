@@ -124,6 +124,10 @@ class OfflineReconciler {
       }
       // Already on device — nothing to do.
       if (c.deviceState == OfflineDeviceState.downloaded) continue;
+      // Re-planning a failed chapter every pass is what let one unfetchable
+      // chapter keep a device and a server busy forever. Network failures park
+      // as `downloading`, so nothing a reconnect should resume is stranded.
+      if (c.deviceState == OfflineDeviceState.error) continue;
 
       if (nets.storageCapEnabled) {
         // RC5 convergence guard: stop adding if there is no room.

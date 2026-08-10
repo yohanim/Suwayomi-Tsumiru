@@ -485,10 +485,6 @@
   "@readerScrollAnimation": {
     "description": "Switch title to Disable scroll animation in reader screen"
   },
-  "readerMagnifierSize": "حجم التكبير",
-  "@readerMagnifierSize": {
-    "description": "Slider title text for Reader Magnifier Size"
-  },
   "reddit": "Reddit",
   "@reddit": {
     "description": "Reddit app title"

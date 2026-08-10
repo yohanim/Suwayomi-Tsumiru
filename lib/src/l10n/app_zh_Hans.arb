@@ -771,10 +771,6 @@
   "@readerScrollAnimation": {
     "description": "Switch title to Disable scroll animation in reader screen"
   },
-  "readerMagnifierSize": "放大大小",
-  "@readerMagnifierSize": {
-    "description": "Slider title text for Reader Magnifier Size"
-  },
   "clearCache": "清除缓存",
   "@clearCache": {
     "description": "Button text for clear cache in General Settings screen"

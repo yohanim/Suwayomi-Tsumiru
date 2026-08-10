@@ -9,7 +9,6 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 import '../../../../../../../constants/enum.dart';
 import '../../../../../../../utils/extensions/custom_extensions.dart';
-import '../../../../../../settings/presentation/reader/widgets/reader_magnifier_size_slider/reader_magnifier_size_slider.dart';
 import '../../../../../../settings/presentation/reader/widgets/reader_mode_tile/reader_mode_tile.dart';
 import '../../../../../../settings/presentation/reader/widgets/reader_navigation_layout_tile/reader_navigation_layout_tile.dart';
 import '../../../../../../settings/presentation/reader/widgets/long_strip_width_limit_slider/long_strip_width_limit_slider.dart';
@@ -26,12 +25,10 @@ class ReadingModeTab extends ConsumerWidget {
     super.key,
     required this.mangaId,
     required this.readerPadding,
-    required this.magnifierSize,
   });
 
   final int mangaId;
   final ValueNotifier<double> readerPadding;
-  final ValueNotifier<double> magnifierSize;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -143,17 +140,12 @@ class ReadingModeTab extends ConsumerWidget {
             ],
           ),
         ],
-        // Padding + magnifier are per-manga overrides too, so they live under
+        // Padding is a per-manga override too, so it lives under
         // "For this series", not the global viewer block.
         AsyncReaderPaddingSlider(
           readerPadding: readerPadding,
           onChanged: (value) =>
               model.setSidePadding(value, perSeries: perSeries),
-        ),
-        AsyncReaderMagnifierSizeSlider(
-          readerMagnifierSize: magnifierSize,
-          onChanged: (value) =>
-              model.setMagnifierSize(value, perSeries: perSeries),
         ),
         // ── Viewer defaults (global, apply to every series) ──
         _GroupHeading(isLongStrip

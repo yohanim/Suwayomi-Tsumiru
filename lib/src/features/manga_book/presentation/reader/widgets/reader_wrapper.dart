@@ -12,8 +12,6 @@ import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:hooks_riverpod/legacy.dart';
 
-import '../../../../../constants/app_constants.dart';
-import '../../../../../constants/app_sizes.dart';
 import '../../../../../constants/db_keys.dart';
 import '../../../../../constants/enum.dart';
 import '../../../../../constants/reader_keyboard_shortcuts.dart';
@@ -25,7 +23,6 @@ import '../../../../settings/presentation/reader/widgets/reader_general_prefs/re
 import '../../../../settings/presentation/reader/widgets/reader_initial_overlay_tile/reader_initial_overlay_tile.dart';
 import '../../../../settings/presentation/reader/widgets/reader_invert_tap_tile/reader_invert_tap_tile.dart';
 import '../../../../settings/presentation/reader/widgets/reader_last_page_swipe_tile/reader_last_page_swipe_tile.dart';
-import '../../../../settings/presentation/reader/widgets/reader_magnifier_size_slider/reader_magnifier_size_slider.dart';
 import '../../../../settings/presentation/reader/widgets/reader_mode_tile/reader_mode_tile.dart';
 import '../../../../settings/presentation/reader/widgets/reader_navigation_layout_tile/reader_navigation_layout_tile.dart';
 import '../../../../settings/presentation/reader/widgets/reader_padding_slider/reader_padding_slider.dart';
@@ -52,10 +49,10 @@ import 'reader_navigation_layout/reader_navigation_layout.dart';
 class ReaderInputCallbacks {
   const ReaderInputCallbacks({
     required this.onTap,
-    required this.onLongPressStart,
-    required this.onLongPressMoveUpdate,
-    required this.onLongPressEnd,
-    required this.onLongPressCancel,
+    this.onLongPressStart,
+    this.onLongPressMoveUpdate,
+    this.onLongPressEnd,
+    this.onLongPressCancel,
     required this.onNext,
     required this.onPrevious,
     required this.onNextBoundary,
@@ -68,10 +65,14 @@ class ReaderInputCallbacks {
   });
 
   final VoidCallback onTap;
-  final ValueChanged<Offset> onLongPressStart;
-  final ValueChanged<Offset> onLongPressMoveUpdate;
-  final VoidCallback onLongPressEnd;
-  final VoidCallback onLongPressCancel;
+
+  /// Null when nothing consumes a long press. The recognizers are then never
+  /// registered, so a slow tap stays a tap instead of losing the gesture arena
+  /// to a handler that would have done nothing with it.
+  final ValueChanged<Offset>? onLongPressStart;
+  final ValueChanged<Offset>? onLongPressMoveUpdate;
+  final VoidCallback? onLongPressEnd;
+  final VoidCallback? onLongPressCancel;
   final VoidCallback onNext;
   final VoidCallback onPrevious;
   final bool Function() onNextBoundary;
@@ -250,10 +251,6 @@ class ReaderWrapper extends HookConsumerWidget {
     final bool lastPageSwipeEnabled = ref.watch(lastPageSwipeEnabledProvider) ??
         DBKeys.lastPageSwipeEnabled.initial;
 
-    final double localMangaReaderMagnifierSize =
-        ref.watch(readerMagnifierSizeKeyProvider) ??
-            DBKeys.readerMagnifierSize.initial;
-
     final sessionVisibility = ref.watch(readerChromeVisibleProvider);
     final visibility = useState(
       sessionVisibility ?? ref.read(readerInitialOverlayProvider).ifNull(),
@@ -263,9 +260,6 @@ class ReaderWrapper extends HookConsumerWidget {
     final utilsBarExpanded = useState(false);
     final mangaReaderPadding =
         useState(manga.metaData.readerPadding ?? localMangaReaderPadding);
-    final mangaReaderMagnifierSize = useState(
-      manga.metaData.readerMagnifierSize ?? localMangaReaderMagnifierSize,
-    );
 
     final mangaReaderMode =
         manga.metaData.readerMode ?? ReaderMode.defaultReader;
@@ -653,8 +647,6 @@ class ReaderWrapper extends HookConsumerWidget {
                           scrollDirection: scrollDirection,
                           mangaId: manga.id,
                           mangaReaderPadding: mangaReaderPadding.value,
-                          mangaReaderMagnifierSize:
-                              mangaReaderMagnifierSize.value,
                           onNext: onReaderNext,
                           onPrevious: onReaderPrevious,
                           onNextBoundary: tryNextChapter,
@@ -727,7 +719,6 @@ class ReaderWrapper extends HookConsumerWidget {
                     mangaId: manga.id,
                     visibility: visibility,
                     readerPadding: mangaReaderPadding,
-                    magnifierSize: mangaReaderMagnifierSize,
                   );
                   // The reader may have been closed while the sheet was open —
                   // the focus node is disposed by then, so guard before using it.
@@ -947,7 +938,6 @@ class ReaderView extends HookConsumerWidget {
     required this.scrollDirection,
     required this.mangaId,
     required this.mangaReaderPadding,
-    required this.mangaReaderMagnifierSize,
     required this.onNext,
     required this.onPrevious,
     required this.prevNextChapterPair,
@@ -973,7 +963,6 @@ class ReaderView extends HookConsumerWidget {
   final Axis scrollDirection;
   final int mangaId;
   final double mangaReaderPadding;
-  final double mangaReaderMagnifierSize;
   final VoidCallback onNext;
   final VoidCallback onPrevious;
   final bool Function() onNextBoundary;
@@ -996,19 +985,12 @@ class ReaderView extends HookConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final showMagnification = useState(false);
-    final dragGesturePosition = useState(Offset.zero);
     final pageActionsOpen = useState(false);
 
     // "Show actions on long tap" (default ON): long-press opens the
-    // page-actions sheet instead of the magnifier. OFF keeps the magnifier.
+    // page-actions sheet. OFF: long-press does nothing.
     final readWithLongTap =
         ref.watch(readWithLongTapProvider) ?? DBKeys.readWithLongTap.initial;
-    final positionOffset = kMagnifierPosition(
-      dragGesturePosition.value,
-      context.mediaQuerySize,
-      mangaReaderMagnifierSize,
-    );
 
     Widget content = Padding(
       padding: EdgeInsets.symmetric(
@@ -1026,51 +1008,31 @@ class ReaderView extends HookConsumerWidget {
             : null);
 
     void handleLongPressStart(Offset position) {
-      if (readWithLongTap) {
-        if (pageActionsOpen.value ||
-            ModalRoute.of(context)?.isCurrent != true) {
-          return;
-        }
-        pageActionsOpen.value = true;
-        unawaited(showReaderPageActionsSheet(
-          context: context,
-          ref: ref,
-          chapterPages: chapterPages,
-          pageIndex: currentIndex,
-          spreadPageIndexes: spreadPageIndexes,
-        ).whenComplete(() {
-          if (context.mounted) pageActionsOpen.value = false;
-        }));
+      if (pageActionsOpen.value || ModalRoute.of(context)?.isCurrent != true) {
         return;
       }
-      dragGesturePosition.value = position;
-      showMagnification.value = true;
-    }
-
-    void handleLongPressMove(Offset position) {
-      if (readWithLongTap) return;
-      dragGesturePosition.value = position;
-    }
-
-    void handleLongPressEnd() {
-      if (readWithLongTap) return;
-      showMagnification.value = false;
+      pageActionsOpen.value = true;
+      unawaited(showReaderPageActionsSheet(
+        context: context,
+        ref: ref,
+        chapterPages: chapterPages,
+        pageIndex: currentIndex,
+        spreadPageIndexes: spreadPageIndexes,
+      ).whenComplete(() {
+        if (context.mounted) pageActionsOpen.value = false;
+      }));
     }
 
     void handleLongPressCancel() {
-      if (readWithLongTap) {
-        // Flag-first + canPop so this and the sheet's own dismissal can't
-        // double-pop (which trips the scope assertion) or pop the reader itself.
-        if (pageActionsOpen.value &&
-            context.mounted &&
-            ModalRoute.of(context)?.isCurrent == false &&
-            Navigator.of(context).canPop()) {
-          pageActionsOpen.value = false;
-          unawaited(Navigator.of(context).maybePop());
-        }
-        return;
+      // Flag-first + canPop so this and the sheet's own dismissal can't
+      // double-pop (which trips the scope assertion) or pop the reader itself.
+      if (pageActionsOpen.value &&
+          context.mounted &&
+          ModalRoute.of(context)?.isCurrent == false &&
+          Navigator.of(context).canPop()) {
+        pageActionsOpen.value = false;
+        unawaited(Navigator.of(context).maybePop());
       }
-      showMagnification.value = false;
     }
 
     final resolvedNavigationLayout = effectiveNavigationLayout(
@@ -1118,10 +1080,9 @@ class ReaderView extends HookConsumerWidget {
       content = ReaderInputScope(
         callbacks: ReaderInputCallbacks(
           onTap: toggleVisibility,
-          onLongPressStart: handleLongPressStart,
-          onLongPressMoveUpdate: handleLongPressMove,
-          onLongPressEnd: handleLongPressEnd,
-          onLongPressCancel: handleLongPressCancel,
+          // Off means nobody wants the gesture, so it is never claimed.
+          onLongPressStart: readWithLongTap ? handleLongPressStart : null,
+          onLongPressCancel: readWithLongTap ? handleLongPressCancel : null,
           onNext: onNext,
           onPrevious: onPrevious,
           onNextBoundary: onNextBoundary,
@@ -1137,11 +1098,11 @@ class ReaderView extends HookConsumerWidget {
     } else {
       content = DirectionalSwipeGestureHandler(
         onTap: toggleVisibility,
-        onLongPressStart: (details) =>
-            handleLongPressStart(details.localPosition),
-        onLongPressEnd: (_) => handleLongPressEnd(),
-        onLongPressMoveUpdate: (details) =>
-            handleLongPressMove(details.localPosition),
+        // Null when nothing consumes it, so the recognizer is never registered
+        // and a slow tap isn't lost to the long-press arena.
+        onLongPressStart: readWithLongTap
+            ? (details) => handleLongPressStart(details.localPosition)
+            : null,
         scrollDirection: scrollDirection,
         readerSwipeChapterToggle: readerSwipeChapterToggle,
         lastPageSwipeEnabled: lastPageSwipeEnabled,
@@ -1172,22 +1133,6 @@ class ReaderView extends HookConsumerWidget {
             showReaderLayoutAnimation: showZonesOnOpen,
           ),
         ),
-        if (showMagnification.value)
-          Positioned(
-            left: positionOffset.dx,
-            top: positionOffset.dy,
-            child: RawMagnifier(
-              decoration: kMagnifierDecoration,
-              size: kMagnifierSize * mangaReaderMagnifierSize,
-              focalPointOffset: kMagnifierOffset(
-                dragGesturePosition.value,
-                context.mediaQuerySize,
-                mangaReaderMagnifierSize,
-              ),
-              magnificationScale: 2,
-              child: const ColoredBox(color: Color.fromARGB(8, 158, 158, 158)),
-            ),
-          ),
       ],
     );
   }

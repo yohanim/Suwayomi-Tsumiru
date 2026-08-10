@@ -741,10 +741,6 @@
   "@readerNavigationLayoutInvert": {
     "description": "Switch title to invert Tap to scroll in reader screen"
   },
-  "readerMagnifierSize": "Розмір екранної лупи",
-  "@readerMagnifierSize": {
-    "description": "Slider title text for Reader Magnifier Size"
-  },
   "running": "Запущено",
   "@running": {
     "description": "Running status Manga Group title in Update Summary Screen"

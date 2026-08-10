@@ -9,19 +9,23 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 import '../../../routes/router_config.dart';
 import '../../../utils/extensions/custom_extensions.dart';
-import '../../library/presentation/category/controller/edit_category_controller.dart';
-import '../data/offline_repository.dart';
 import '../data/server_reachability.dart';
 
-/// Inline banner shown in the library while the server can't be reached.
+/// Inline banner shown while the server can't be reached, on the screens whose
+/// content silently goes stale without it — the library, and a series page
+/// where a download can sit at the same number for minutes with no explanation.
 ///
-/// It lives on the library because that's where the reachability signal is
-/// detected, and where the case it exists for happens: browsing a stale cached
-/// library without realising you're offline. It sits inline (not via
-/// `ScaffoldMessenger`) so it never contends with the app-wide re-auth banner
-/// for the shared banner slot.
+/// Deliberately NOT on the reader: that screen belongs to the page.
+///
+/// It sits inline (not via `ScaffoldMessenger`) so it never contends with the
+/// app-wide re-auth banner for the shared banner slot.
 class ServerUnreachableBanner extends ConsumerWidget {
-  const ServerUnreachableBanner({super.key});
+  const ServerUnreachableBanner({super.key, this.onRetry});
+
+  /// What the host screen re-fetches when the user retries. The offline pins
+  /// are dropped either way; without this the banner could only ever refresh
+  /// the library.
+  final VoidCallback? onRetry;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -41,7 +45,7 @@ class ServerUnreachableBanner extends ConsumerWidget {
           onPressed: () {
             ref.read(viewOfflineNowProvider.notifier).set(false);
             ref.read(serverUnreachableProvider.notifier).set(false);
-            ref.invalidate(categoryControllerProvider);
+            onRetry?.call();
           },
           child: Text(context.l10n.refresh),
         ),

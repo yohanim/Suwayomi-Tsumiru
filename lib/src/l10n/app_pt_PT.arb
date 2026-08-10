@@ -412,10 +412,6 @@
   "@noServerFound": {
     "description": "Text to show that no Server found in locale network"
   },
-  "readerMagnifierSize": "Tamanho da lupa",
-  "@readerMagnifierSize": {
-    "description": "Slider title text for Reader Magnifier Size"
-  },
   "cacheCleared": "Cache limpo",
   "@cacheCleared": {
     "description": "Toast Text to show after clearing cache"

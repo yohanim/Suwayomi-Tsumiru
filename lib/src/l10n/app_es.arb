@@ -376,10 +376,6 @@
   "@readerScrollAnimation": {
     "description": "Switch title to Disable scroll animation in reader screen"
   },
-  "readerMagnifierSize": "Tamaño de la lupa",
-  "@readerMagnifierSize": {
-    "description": "Slider title text for Reader Magnifier Size"
-  },
   "clearCache": "Borrar la caché",
   "@clearCache": {
     "description": "Button text for clear cache in General Settings screen"

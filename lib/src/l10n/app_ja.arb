@@ -519,10 +519,6 @@
   "@quickSearchSource": {
     "description": "Quick Open Hint text for Source S with prefill '@S'"
   },
-  "readerMagnifierSize": "拡大鏡のサイズ",
-  "@readerMagnifierSize": {
-    "description": "Slider title text for Reader Magnifier Size"
-  },
   "webUI": "WEB UIで開く",
   "@webUI": {
     "description": "Button text to open in web UI"

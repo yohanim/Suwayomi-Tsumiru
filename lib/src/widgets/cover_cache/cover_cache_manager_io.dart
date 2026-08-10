@@ -21,7 +21,7 @@ import 'package:path_provider/path_provider.dart';
 /// Covers are small and long-lived, so they get their own store: files under
 /// application-support (durable, app-private) with a cap sized to a large
 /// library instead of a page ring buffer.
-CacheManager createCoverCacheManager() => CacheManager(
+CacheManager createCoverCacheManager() => _CoverCacheManager(
       Config(
         'tsumiruCovers',
         stalePeriod: const Duration(days: 90),
@@ -29,6 +29,39 @@ CacheManager createCoverCacheManager() => CacheManager(
         fileSystem: _AppSupportFileSystem('tsumiruCovers'),
       ),
     );
+
+/// A cover on disk is shown, full stop — its age is never a reason to go back
+/// to the server.
+///
+/// The stock manager re-downloads an expired entry every time it is displayed,
+/// and the expiry comes from the server's own cache headers (about ten days
+/// for a Suwayomi thumbnail), so scrolling a library quietly re-fetched every
+/// cover past its date. Covers change when the user asks for new metadata, not
+/// on a clock: an explicit refresh evicts the entry, and the next load fetches
+/// it because there is no copy left — not because it went stale.
+class _CoverCacheManager extends CacheManager {
+  _CoverCacheManager(super.config);
+
+  @override
+  Stream<FileResponse> getFileStream(
+    String url, {
+    String? key,
+    Map<String, String>? headers,
+    bool withProgress = false,
+  }) async* {
+    final cached = await getFileFromCache(key ?? url);
+    if (cached != null) {
+      yield cached;
+      return;
+    }
+    yield* super.getFileStream(
+      url,
+      key: key,
+      headers: headers,
+      withProgress: withProgress,
+    );
+  }
+}
 
 /// Same layout as the package's IOFileSystem, but rooted in
 /// application-support instead of the OS temp dir.

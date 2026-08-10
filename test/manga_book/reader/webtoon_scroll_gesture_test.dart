@@ -30,8 +30,6 @@ DirectionalSwipeGestureHandler _realHandler(Axis axis) =>
       prevNextChapterPair: null,
       onTap: () {},
       onLongPressStart: (_) {},
-      onLongPressEnd: (_) {},
-      onLongPressMoveUpdate: (_) {},
       onNextPage: () {},
       onPreviousPage: () {},
       pageController: null,

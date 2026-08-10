@@ -6,6 +6,7 @@
 
 import 'package:drift/drift.dart';
 
+import '../../../utils/logger/logger.dart';
 import 'offline_types.dart';
 
 export 'offline_types.dart';
@@ -726,28 +727,41 @@ class OfflineDatabase extends _$OfflineDatabase {
     required int chapterId,
     required List<({int pageIndex, String relPath, int bytes})> pages,
     required DateTime downloadedAt,
-  }) => transaction(() async {
-    await (delete(
-      offlinePages,
-    )..where((t) => t.chapterId.equals(chapterId))).go();
-    for (final pg in pages) {
-      await into(offlinePages).insertOnConflictUpdate(
-        OfflinePagesCompanion.insert(
-          chapterId: chapterId,
-          pageIndex: pg.pageIndex,
-          relativePath: pg.relPath,
+  }) async {
+    // Downloaded-with-no-pages reads as local but resolves to nothing, so the
+    // reader streams every page from the server instead. A torn manifest is
+    // enough to produce it, via committedPages returning [].
+    if (pages.isEmpty) {
+      logger.w(
+        'Offline: refusing to mark chapter $chapterId downloaded with no pages',
+      );
+      return;
+    }
+    return transaction(() async {
+      await (delete(
+        offlinePages,
+      )..where((t) => t.chapterId.equals(chapterId))).go();
+      for (final pg in pages) {
+        await into(offlinePages).insertOnConflictUpdate(
+          OfflinePagesCompanion.insert(
+            chapterId: chapterId,
+            pageIndex: pg.pageIndex,
+            relativePath: pg.relPath,
+          ),
+        );
+      }
+      await (update(
+        offlineChapters,
+      )..where((t) => t.id.equals(chapterId))).write(
+        OfflineChaptersCompanion(
+          deviceState: const Value(OfflineDeviceState.downloaded),
+          bytes: Value(pages.fold<int>(0, (s, p) => s + p.bytes)),
+          pageCount: Value(pages.length),
+          downloadedAt: Value(downloadedAt),
         ),
       );
-    }
-    await (update(offlineChapters)..where((t) => t.id.equals(chapterId))).write(
-      OfflineChaptersCompanion(
-        deviceState: const Value(OfflineDeviceState.downloaded),
-        bytes: Value(pages.fold<int>(0, (s, p) => s + p.bytes)),
-        pageCount: Value(pages.length),
-        downloadedAt: Value(downloadedAt),
-      ),
-    );
-  });
+    });
+  }
 
   /// Unpin every chapter of a manga — used on Migrate so the source's kept
   /// chapters aren't held back from the post-removal purge reconcile.

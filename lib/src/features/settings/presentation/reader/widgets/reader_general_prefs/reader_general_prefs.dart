@@ -57,8 +57,7 @@ class DrawUnderCutout extends _$DrawUnderCutout
   bool? build() => initialize(DBKeys.drawUnderCutout);
 }
 
-/// When ON, a reader long-press opens the page-actions sheet; OFF keeps the
-/// magnifier.
+/// When ON, a reader long-press opens the page-actions sheet; OFF is a no-op.
 @riverpod
 class ReadWithLongTap extends _$ReadWithLongTap
     with SharedPreferenceClientMixin<bool> {

@@ -117,7 +117,10 @@ Future<ChapterCommitResult> commitStagedChapterHoldingLock({
   }
 
   final pages = await store.commitStaging(mangaId, chapterId);
-  if (pages == null) return ChapterCommitResult.incomplete;
+  // Empty counts as incomplete: the catalog refuses to mark a chapter
+  // downloaded with no pages, so reporting success here had the notification
+  // claim a chapter the user hasn't got and left the row mid-download.
+  if (pages == null || pages.isEmpty) return ChapterCommitResult.incomplete;
 
   await db.commitDownloadedChapter(
     chapterId: chapterId,

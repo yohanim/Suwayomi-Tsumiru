@@ -237,33 +237,35 @@ Future<List<CategoryDto>?> categoriesWithOfflineFallback({
     if (storedCats.isEmpty) {
       return [offlineDefaultCategoryDto(downloadedInLibrary.length)];
     }
-    // Real per-tab counts, so empty tabs drop the same way they do online
-    // (nonZeroCategoryList). Manga with no membership rows live in the
-    // server's default category, which their DTOs don't list.
+    // Real per-tab counts. Every mirrored category is kept even at zero:
+    // offline, empty means "nothing downloaded from it", not "you put nothing
+    // in it", and dropping them left a user whose downloads all sit in one
+    // category with no tab bar at all — their categories looked deleted.
+    // Manga with no membership rows live in the server's default category,
+    // which their DTOs don't list.
     final counts = await db.mangaCountByCategory(downloadedInLibrary);
     final uncategorized = await db.uncategorizedOf(downloadedInLibrary);
     int countFor(OfflineCategory cat) =>
         (counts[cat.id] ?? 0) + (cat.id == 0 ? uncategorized.length : 0);
     final tabs = [
       for (final cat in storedCats)
-        if (countFor(cat) > 0)
-          Fragment$CategoryDto(
-            defaultCategory: cat.id == 0,
-            id: cat.id,
-            includeInDownload: Enum$IncludeOrExclude.UNSET,
-            includeInUpdate: Enum$IncludeOrExclude.UNSET,
-            name: cat.name,
-            order: cat.sortOrder,
-            mangas: Fragment$CategoryDto$mangas(totalCount: countFor(cat)),
-            // Mirrored so hidden tabs stay hidden offline.
-            meta: [
-              if (cat.isHidden)
-                Fragment$CategoryDto$meta(
-                  key: kCategoryHiddenMetaKey,
-                  value: 'true',
-                ),
-            ],
-          ),
+        Fragment$CategoryDto(
+          defaultCategory: cat.id == 0,
+          id: cat.id,
+          includeInDownload: Enum$IncludeOrExclude.UNSET,
+          includeInUpdate: Enum$IncludeOrExclude.UNSET,
+          name: cat.name,
+          order: cat.sortOrder,
+          mangas: Fragment$CategoryDto$mangas(totalCount: countFor(cat)),
+          // Mirrored so hidden tabs stay hidden offline.
+          meta: [
+            if (cat.isHidden)
+              Fragment$CategoryDto$meta(
+                key: kCategoryHiddenMetaKey,
+                value: 'true',
+              ),
+          ],
+        ),
     ];
     // Downloads with no home tab (uncategorizedOf already covers orphaned
     // memberships) get a synthetic Default.

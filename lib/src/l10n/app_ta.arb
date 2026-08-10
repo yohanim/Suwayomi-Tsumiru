@@ -707,10 +707,6 @@
   "@quickSearchSourceManga": {
     "description": "Quick Open Hint text for searching Manga M in Source S with prefill '@S/M'"
   },
-  "readerMagnifierSize": "உருப்பெருக்கி அளவு",
-  "@readerMagnifierSize": {
-    "description": "Slider title text for Reader Magnifier Size"
-  },
   "readerMode": "படித்தல் பயன்முறை",
   "@readerMode": {
     "description": "Popup title and Button text of Reader Mode popup"

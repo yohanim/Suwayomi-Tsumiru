@@ -5,6 +5,8 @@ import 'dart:io';
 import 'package:graphql_flutter/graphql_flutter.dart';
 import 'package:http/http.dart' as http;
 
+import 'gateway_status.dart';
+
 /// The server answered with a body that isn't JSON — a proxy/gateway error
 /// page, an HTML 500, etc. Carries the status so the UI can say "server error"
 /// instead of a raw "Unexpected character (at offset 0)".
@@ -42,7 +44,7 @@ bool isConnectionError(Object error) {
   if (error is OperationException) {
     final link = error.linkException;
     if (link is HttpLinkServerException &&
-        _isGatewayStatus(link.response.statusCode)) {
+        isGatewayStatus(link.response.statusCode)) {
       // A gateway status is the middleman speaking for a dead origin even
       // when its body happens to parse (some balancers emit JSON errors).
       return true;
@@ -65,11 +67,4 @@ bool _isSocketLike(Object? e) =>
     e is TimeoutException ||
     e is HandshakeException ||
     e is http.ClientException ||
-    (e is ServerNotJsonException && _isGatewayStatus(e.statusCode));
-
-// A proxy answering for a dead origin: 502/503/504, plus Cloudflare's
-// origin-down codes. 520/525/526 stay surfaced — the origin is alive but
-// misbehaving there, which the user must see to fix.
-bool _isGatewayStatus(int status) =>
-    status == 502 || status == 503 || status == 504 ||
-    (status >= 521 && status <= 524);
+    (e is ServerNotJsonException && isGatewayStatus(e.statusCode));

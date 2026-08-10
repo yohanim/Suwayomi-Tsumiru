@@ -144,6 +144,17 @@ GraphQLClient graphQlClient(Ref ref) {
         });
       }
       return response;
+    }).handleError((Object error) {
+      // The inverse. Only the downloader used to set this, so everything else
+      // kept paying its own retries to discover the same thing.
+      if (isConnectionError(error)) {
+        Future(() {
+          try {
+            ref.read(serverUnreachableProvider.notifier).set(true);
+          } catch (_) {}
+        });
+      }
+      throw error;
     });
   });
   link = reachabilityLink.concat(link);
@@ -169,24 +180,20 @@ GraphQLClient graphQlClient(Ref ref) {
   );
 }
 
-@riverpod
+// keepAlive: autoDispose tied the websocket's life to whatever screen happened
+// to be watching a subscription, so navigating tore the socket down and the
+// next screen opened a fresh one. Measured against the server: 2 handshakes per
+// 10 min idle, 53 while navigating.
+@Riverpod(keepAlive: true)
 GraphQLClient graphQlSubscriptionClient(Ref ref) {
   final authType = ref.watch(authTypeKeyProvider) ?? DBKeys.authType.initial;
   final credentials = ref.watch(credentialsProvider).value;
-  // Watch ONLY the socket-relevant auth material (cookie + token raw strings)
-  // so this client is rebuilt — and the socket reconnects with fresh auth — on
-  // a re-login or token/cookie refresh. Reading it once (the old behaviour) left
-  // the connection pinned to the auth captured at first connect, so after a
-  // refresh the @requireAuth subscriptions (downloads + library-update feeds)
-  // silently died. Selecting the two raw strings (not the whole credentials
-  // object) avoids tearing the socket down on unrelated writes — e.g. a login
-  // also writes the saved password, which would otherwise reconnect twice.
-  final socketAuth = ref.watch(authCredentialsStoreProvider.select(
-    (s) => (
-      cookie: s.value?.simpleLoginCookie,
-      token: s.value?.uiAccessToken,
-    ),
-  ));
+  // Only the cookie: it's pinned into the handshake at build time. The
+  // ui_login token is read per-connect in initialPayload, so watching it just
+  // rebuilt the socket on every refresh and killed the live subscriptions.
+  final socketCookie = ref.watch(
+    authCredentialsStoreProvider.select((s) => s.value?.simpleLoginCookie),
+  );
   final wsUrl = Endpoints.baseApi(
     baseUrl: ref.watch(serverUrlProvider) ?? DBKeys.serverUrl.initial,
     port: ref.watch(serverPortProvider),
@@ -218,7 +225,7 @@ GraphQLClient graphQlSubscriptionClient(Ref ref) {
           : <String, dynamic>{'Authorization': token};
     };
   } else if (authType == AuthType.simpleLogin) {
-    final cookie = socketAuth.cookie;
+    final cookie = socketCookie;
     handshakeHeaders =
         (cookie == null || cookie.isEmpty) ? null : {'Cookie': cookie};
   } else if (authType == AuthType.basic && credentials.isNotBlank) {

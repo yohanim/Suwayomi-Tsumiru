@@ -125,6 +125,7 @@ class CatchupLedger {
     this.pendingDownloads = const {},
     this.pendingServerFetch = const {},
     this.serverFetchRetries = const {},
+    this.downloadRetries = const {},
   });
 
   final NewChapterWatermark cursor;
@@ -135,20 +136,29 @@ class CatchupLedger {
   /// chapterId → mangaId, enqueued server-side; collect next run.
   final Map<int, int> pendingServerFetch;
 
-  /// chapterId → runs spent waiting; expired entries surface via the launch
-  /// banner instead of retrying forever against a dead source.
+  /// chapterId → runs spent asking the server to fetch it from the source;
+  /// expired entries surface via the launch banner instead of retrying forever
+  /// against a dead source.
   final Map<int, int> serverFetchRetries;
+
+  /// chapterId → attempts spent pulling it from the server onto this device.
+  /// Separate from [serverFetchRetries] on purpose: the two hops fail for
+  /// different reasons, and one budget shared between them meant a slow source
+  /// could exhaust the chapter before the device ever tried.
+  final Map<int, int> downloadRetries;
 
   CatchupLedger copyWith({
     NewChapterWatermark? cursor,
     Map<int, int>? pendingDownloads,
     Map<int, int>? pendingServerFetch,
     Map<int, int>? serverFetchRetries,
+    Map<int, int>? downloadRetries,
   }) => CatchupLedger(
     cursor: cursor ?? this.cursor,
     pendingDownloads: pendingDownloads ?? this.pendingDownloads,
     pendingServerFetch: pendingServerFetch ?? this.pendingServerFetch,
     serverFetchRetries: serverFetchRetries ?? this.serverFetchRetries,
+    downloadRetries: downloadRetries ?? this.downloadRetries,
   );
 
   Map<String, Object?> toJson() => {
@@ -156,6 +166,7 @@ class CatchupLedger {
     'pendingDownloads': _mapToJson(pendingDownloads),
     'pendingServerFetch': _mapToJson(pendingServerFetch),
     'serverFetchRetries': _mapToJson(serverFetchRetries),
+    'downloadRetries': _mapToJson(downloadRetries),
   };
 
   factory CatchupLedger.fromJson(Map<String, Object?> j) => CatchupLedger(
@@ -165,6 +176,7 @@ class CatchupLedger {
     pendingDownloads: _mapFromJson(j['pendingDownloads']),
     pendingServerFetch: _mapFromJson(j['pendingServerFetch']),
     serverFetchRetries: _mapFromJson(j['serverFetchRetries']),
+    downloadRetries: _mapFromJson(j['downloadRetries']),
   );
 
   static Map<String, Object?> _mapToJson(Map<int, int> m) => {

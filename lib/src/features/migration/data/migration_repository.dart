@@ -37,7 +37,6 @@ const _readerMetaKeys = {
   'flutter_readerMode',
   'flutter_readerNavigationLayout',
   'flutter_readerPadding',
-  'flutter_readerMagnifierSize',
   'flutter_readerOrientation',
   'flutter_readerTapInvert',
   'flutter_chapterListMode',

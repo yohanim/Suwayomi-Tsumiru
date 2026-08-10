@@ -9,6 +9,7 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../../../constants/db_keys.dart';
+import '../../../utils/logger/logger.dart';
 import '../../manga_book/data/manga_book/manga_book_repository.dart';
 import '../../../global_providers/global_providers.dart';
 import 'offline_database.dart';
@@ -154,6 +155,59 @@ OfflineRepository offlineRepository(Ref ref) => OfflineRepository(
       db: ref.watch(offlineDatabaseProvider),
       paths: ref.watch(offlinePathsProvider),
     );
+
+/// Repairs a chapter that claims to be downloaded but has no page rows,
+/// returning its page paths when it healed. The files are usually still on
+/// disk, so rebuilding the rows costs nothing; when the manifest can't vouch
+/// for them, re-queue rather than leave a chapter lying about being local.
+Future<List<String>?> repairDownloadedChapterPages({
+  required OfflineDatabase db,
+  required OfflinePageStore store,
+  required OfflinePaths paths,
+  required int chapterId,
+  // Kept out of this function so it stays Ref-less and testable: re-queueing
+  // without starting anything leaves the chapter waiting on an unrelated
+  // download trigger, which is not a self-heal.
+  void Function()? onRequeued,
+}) async {
+  final ch = await db.chapterById(chapterId);
+  if (ch == null || ch.deviceState != OfflineDeviceState.downloaded) return null;
+
+  final committed = await store.committedPages(ch.mangaId, chapterId);
+  // Short counts as badly as none: rebuilding rows from a directory that lost
+  // half its files certifies a truncated chapter as complete, and the reader
+  // then shows it that way forever. pageCount is 0 for rows that never learned
+  // their length, which is not evidence of a short read.
+  final short = ch.pageCount > 0 && committed.length < ch.pageCount;
+  if (committed.isEmpty || short) {
+    logger.w(
+      'Offline: chapter $chapterId claims downloaded with '
+      '${committed.length}/${ch.pageCount} pages on disk, re-queueing',
+    );
+    await db.transaction(() async {
+      await (db.delete(
+        db.offlinePages,
+      )..where((t) => t.chapterId.equals(chapterId))).go();
+      await db.setChapterDeviceState(
+        chapterId,
+        OfflineDeviceState.queued,
+        bytes: 0,
+      );
+    });
+    onRequeued?.call();
+    return null;
+  }
+
+  logger.i(
+    'Offline: rebuilt ${committed.length} page rows for chapter $chapterId',
+  );
+  await db.commitDownloadedChapter(
+    chapterId: chapterId,
+    pages: committed,
+    downloadedAt: ch.downloadedAt ?? DateTime.now(),
+  );
+  return [for (final p in committed) paths.absolute(p.relPath)];
+}
 
 /// Whether on-device offline storage is available. Defaults to false and is
 /// overridden to true at startup when the catalog opened (native platforms).

@@ -5,8 +5,8 @@
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 //
 // "Show actions on long tap" wiring: with the pref ON a long-press on
-// a reader page opens the page-actions sheet; with it OFF the long-press keeps
-// today's magnifier behaviour.
+// a reader page opens the page-actions sheet; with it OFF long-press is a
+// no-op.
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -42,6 +42,7 @@ const _shareKey = ValueKey('reader-page-action-share');
 Future<void> _pumpReader(
   WidgetTester tester, {
   required bool longTapOn,
+  VoidCallback? onTap,
 }) async {
   tester.view.physicalSize = const Size(800, 1600);
   tester.view.devicePixelRatio = 1.0;
@@ -63,11 +64,10 @@ Future<void> _pumpReader(
         supportedLocales: AppLocalizations.supportedLocales,
         home: Scaffold(
           body: ReaderView(
-            toggleVisibility: () {},
+            toggleVisibility: onTap ?? () {},
             scrollDirection: Axis.vertical,
             mangaId: 1,
             mangaReaderPadding: 0,
-            mangaReaderMagnifierSize: 1,
             onNext: () {},
             onPrevious: () {},
             prevNextChapterPair: null,
@@ -101,29 +101,37 @@ void main() {
     // Sheet with the mobile actions is shown.
     expect(find.byKey(_copyKey), findsOneWidget);
     expect(find.byKey(_shareKey), findsOneWidget);
-    // Magnifier must not be active in this mode.
-    expect(find.byType(RawMagnifier), findsNothing);
   });
 
-  testWidgets('pref OFF: long-press keeps the magnifier, no sheet',
-      (tester) async {
+  testWidgets('pref OFF: long-press is a no-op', (tester) async {
     await _pumpReader(tester, longTapOn: false);
 
-    // Press and hold past the long-press timeout to observe the magnifier
-    // while the gesture is still down.
     final gesture =
         await tester.startGesture(tester.getCenter(find.byType(ReaderView)));
     await tester.pump(const Duration(milliseconds: 600));
     await tester.pump();
 
-    expect(find.byType(RawMagnifier), findsOneWidget);
     expect(find.byKey(_copyKey), findsNothing);
 
     await gesture.up();
     await tester.pumpAndSettle();
 
-    // Magnifier is released; still no sheet.
-    expect(find.byType(RawMagnifier), findsNothing);
     expect(find.byKey(_copyKey), findsNothing);
+  });
+
+  // The reason the magnifier's removal mattered: a long-press recognizer that
+  // consumes nothing still wins the gesture, and the tap that was meant to turn
+  // the page is lost. Users reported having to tap twice.
+  testWidgets('pref OFF: a slow tap still registers as a tap', (tester) async {
+    var taps = 0;
+    await _pumpReader(tester, longTapOn: false, onTap: () => taps++);
+
+    final gesture =
+        await tester.startGesture(tester.getCenter(find.byType(ReaderView)));
+    await tester.pump(const Duration(milliseconds: 600));
+    await gesture.up();
+    await tester.pumpAndSettle();
+
+    expect(taps, 1);
   });
 }

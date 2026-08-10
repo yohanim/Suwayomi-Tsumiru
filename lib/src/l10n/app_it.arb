@@ -755,10 +755,6 @@
   "@quickSearchSourceManga": {
     "description": "Quick Open Hint text for searching Manga M in Source S with prefill '@S/M'"
   },
-  "readerMagnifierSize": "Dimensioni della lente d'ingrandimento",
-  "@readerMagnifierSize": {
-    "description": "Slider title text for Reader Magnifier Size"
-  },
   "readerNavigationLayout": "Layout di navigazione",
   "@readerNavigationLayout": {
     "description": "Popup title and Button text of Reader Navigation Layout popup"

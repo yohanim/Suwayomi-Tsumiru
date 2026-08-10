@@ -615,10 +615,6 @@
   "@readerNavigationLayoutRightAndLeft": {
     "description": "Radio button text for Reader Navigation Layout - Right And Left"
   },
-  "readerMagnifierSize": "",
-  "@readerMagnifierSize": {
-    "description": "Slider title text for Reader Magnifier Size"
-  },
   "reset": "",
   "@reset": {
     "description": "Button text of reset button in source filters"

@@ -53,18 +53,16 @@ MangaDto _manga({Map<String, String> meta = const {}}) => Fragment$MangaDto(
       url: '/manga/1',
     );
 
-/// Mimics ReaderWrapper's gear tap: owns the visibility/padding/magnifier
+/// Mimics ReaderWrapper's gear tap: owns the visibility/padding
 /// notifiers and opens the sheet through the real helper.
 class _SheetHost extends ConsumerWidget {
   const _SheetHost({
     required this.visibility,
     required this.padding,
-    required this.magnifier,
   });
 
   final ValueNotifier<bool> visibility;
   final ValueNotifier<double> padding;
-  final ValueNotifier<double> magnifier;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -77,7 +75,6 @@ class _SheetHost extends ConsumerWidget {
             mangaId: 1,
             visibility: visibility,
             readerPadding: padding,
-            magnifierSize: magnifier,
           ),
           child: const Text('open'),
         ),
@@ -111,7 +108,6 @@ void main() {
           home: _SheetHost(
             visibility: visibility,
             padding: ValueNotifier(0.0),
-            magnifier: ValueNotifier(1.0),
           ),
         ),
       ),

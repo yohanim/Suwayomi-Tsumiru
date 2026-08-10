@@ -671,10 +671,6 @@
   "@quickSearchSource": {
     "description": "Quick Open Hint text for Source S with prefill '@S'"
   },
-  "readerMagnifierSize": "Размер лупы",
-  "@readerMagnifierSize": {
-    "description": "Slider title text for Reader Magnifier Size"
-  },
   "readerMode": "Метод чтения",
   "@readerMode": {
     "description": "Popup title and Button text of Reader Mode popup"

@@ -53,6 +53,25 @@ void main() {
     expect(r.toDownload, {1});
   });
 
+  test('never re-plans a chapter that already failed', () async {
+    await db.upsertMangaMetadata(id: 1, title: 'M', updatedAt: DateTime(2026));
+    await db.setKeepRule(1, OfflineKeepRule.allUnread, 3);
+    await seedChapter(1, 1, read: false, serverDl: true,
+        dev: OfflineDeviceState.error);
+    await seedChapter(2, 2, read: false, serverDl: true); // healthy, still wanted
+    final downloaded = <int>[]; final evicted = <int>[];
+    await OfflineReconciler(
+      db: db, nets: SafetyNetConfig.off,
+      onDownload: (id) async => downloaded.add(id),
+      onEvict: (id) async => evicted.add(id),
+      now: DateTime(2026, 3, 1),
+    ).reconcileManga(1);
+    // Re-planning it every pass is what let one unfetchable chapter keep a
+    // device and a server busy indefinitely.
+    expect(downloaded, [2]);
+    expect(downloaded, isNot(contains(1)));
+  });
+
   test('evicts a downloaded chapter no longer desired', () async {
     await db.upsertMangaMetadata(id: 1, title: 'M', updatedAt: DateTime(2026));
     await db.setKeepRule(1, OfflineKeepRule.allUnread, 3);
