@@ -276,8 +276,8 @@ Future<bool> _syncAndReconcile(
         allSynced = false;
         continue;
       }
-      await sync.syncChapters(chapters);
-      if (!await _reconcileTracked(container, mangaId)) allSynced = false;
+      final newlyRead = await sync.syncChapters(chapters);
+      if (!await _reconcileTracked(container, mangaId, newlyReadChapterIds: newlyRead)) allSynced = false;
     } catch (e) {
       // Never reconcile on a failed fetch — evictions must not run against a
       // list the server didn't actually give us.
@@ -292,7 +292,11 @@ Future<bool> _syncAndReconcile(
 /// so the queue-drain trigger knows which manga still owe a device pull.
 /// Returns false on a failed enqueue (reconcileMangaCore swallows the error)
 /// so the pass won't advance the watermark past an unqueued chapter.
-Future<bool> _reconcileTracked(ProviderContainer container, int mangaId) async {
+Future<bool> _reconcileTracked(
+  ProviderContainer container,
+  int mangaId, {
+  Set<int> newlyReadChapterIds = const {},
+}) async {
   final manager = container.read(offlineDownloadManagerProvider);
   final coordinator = container.read(offlineDownloadCoordinatorProvider);
   if (manager == null || coordinator == null) return false;
@@ -308,6 +312,9 @@ Future<bool> _reconcileTracked(ProviderContainer container, int mangaId) async {
     deleteWhileReadingSlots: container
         .read(localDeleteSettingsProvider)
         .deleteWhileReading,
+    newlyReadChapterIds: newlyReadChapterIds,
+    downloadProtectionWindow:
+        container.read(localDownloadProtectionWindowProvider) ?? false,
     enqueueServerDownload: (ids) async {
       try {
         await container
