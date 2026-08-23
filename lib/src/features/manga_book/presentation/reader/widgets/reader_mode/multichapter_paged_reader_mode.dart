@@ -298,7 +298,7 @@ class MultiChapterPagedReaderMode extends HookConsumerWidget {
       }
       if (completed && !completedChapterIds.value.contains(chapterId)) {
         completedChapterIds.value = {...completedChapterIds.value, chapterId};
-        unawaited(maybeTrackProgressOnReadFetch(ref,
+        unawaited(maybeTrackProgressOnReadFetch(ref.read,
             mangaId: manga.id, isRead: true, manual: false));
         unawaited(noteChapterFinishedInReader(ref,
             mangaId: manga.id, chapterId: chapterId));
@@ -806,7 +806,7 @@ void _markChapterRead(
       ref.read(toastProvider)?.showError(context.l10n.errorSomethingWentWrong);
     }
     unawaited(maybeTrackProgressOnReadFetch(
-      ref,
+      ref.read,
       mangaId: mangaId,
       isRead: true,
       manual: false,

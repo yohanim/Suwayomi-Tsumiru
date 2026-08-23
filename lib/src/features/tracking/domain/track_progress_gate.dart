@@ -5,6 +5,7 @@
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../../../utils/extensions/custom_extensions.dart';
 import '../../../utils/misc/toast/toast.dart';
@@ -13,6 +14,11 @@ import '../../offline/data/offline_repository.dart';
 import '../controller/manga_track_records_controller.dart';
 import '../data/tracker_repository.dart';
 import 'tracking_settings_providers.dart';
+
+/// Sendable read signature shared by `Ref.read`, `WidgetRef.read`, and
+/// `ProviderContainer.read` — lets [maybeTrackProgressOnReadFetch] stay
+/// agnostic of which kind of reader the caller has.
+typedef TrackRead = T Function<T>(ProviderListenable<T> provider);
 
 /// Pure predicate — no Flutter / Riverpod deps, so it is trivially unit-testable.
 ///
@@ -100,21 +106,28 @@ Future<void> maybeTrackProgressOnRead(
 /// network request if they aren't cached — because those screens mark chapters
 /// read without the manga-details screen ever loading the records, so a
 /// cache-only read would see zero bound trackers and wrongly skip the sync.
-/// All `ref` reads happen up front (before any await) so it stays safe when
-/// fired-and-forgotten as the originating widget disposes.
+///
+/// Takes a [TrackRead] rather than a [WidgetRef]. All internal reads happen up
+/// front (before this function's own await) so it stays safe once *entered*
+/// with a live ref — but that only helps if the ref was still valid when the
+/// caller invoked it. A caller firing this off after its own earlier `await`
+/// (e.g. a bulk mark-read action whose widget may have unmounted by then)
+/// must pass a `ProviderContainer.read` tear-off instead of `ref.read` — the
+/// widget's ref throws immediately once its element is disposed, even on this
+/// function's very first line.
 Future<void> maybeTrackProgressOnReadFetch(
-  WidgetRef ref, {
+  TrackRead read, {
   required int mangaId,
   required bool isRead,
   required bool manual,
 }) async {
-  final repo = ref.read(trackerRepositoryProvider);
-  final toast = ref.read(toastProvider);
-  final offlineCaptureActive = ref.read(offlineActiveProvider);
+  final repo = read(trackerRepositoryProvider);
+  final toast = read(toastProvider);
+  final offlineCaptureActive = read(offlineActiveProvider);
   final enabledAfterReading =
-      ref.read(updateProgressAfterReadingProvider).ifNull();
+      read(updateProgressAfterReadingProvider).ifNull();
   final enabledManualMarkRead =
-      ref.read(updateProgressManualMarkReadProvider).ifNull();
+      read(updateProgressManualMarkReadProvider).ifNull();
   // Cheap gate BEFORE the records fetch: the reader calls this on every page
   // turn ([isRead] is false until the last page), so skip the network
   // round-trip entirely unless this is a read event with its toggle enabled.
@@ -123,7 +136,7 @@ Future<void> maybeTrackProgressOnReadFetch(
     return;
   }
   final recordsFuture =
-      ref.read(mangaTrackRecordsProvider(mangaId: mangaId).future);
+      read(mangaTrackRecordsProvider(mangaId: mangaId).future);
 
   final records = await AsyncValue.guard(() => recordsFuture);
   await _pushTrackProgressIfEnabled(
