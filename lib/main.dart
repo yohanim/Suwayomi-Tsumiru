@@ -354,7 +354,10 @@ Future<void> _startApp() async {
             unawaited(
               container
                   .read(backgroundDownloadControllerProvider)
-                  .ensureServiceRunning(force: true),
+                  .ensureServiceRunning(
+                    force: true,
+                    reason: 'serverReachableAgain',
+                  ),
             );
           }
         }

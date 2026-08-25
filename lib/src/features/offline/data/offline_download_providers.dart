@@ -76,7 +76,10 @@ final downloadStarterProvider =
         if (isAndroidNative) {
           await ref
               .read(backgroundDownloadControllerProvider)
-              .requestStart(userInitiated: userInitiated);
+              .requestStart(
+                userInitiated: userInitiated,
+                reason: 'downloadStarterProvider',
+              );
         } else {
           await ref.read(offlineDownloadCoordinatorProvider)?.pumpDownloads();
         }

@@ -28,7 +28,20 @@ import 'background_work_order.dart';
 /// in the background isolate; actual work runs in [DownloadTaskHandler.onStart].
 @pragma('vm:entry-point')
 void backgroundDownloadCallback() {
-  FlutterForegroundTask.setTaskHandler(DownloadTaskHandler());
+  // This isolate has no crash-log/error-zone wiring at all (unlike the main
+  // isolate's FlutterError.onError + platformDispatcher.onError in main.dart)
+  // — anything that escapes a normal try/catch here (a fire-and-forget/
+  // unawaited failure, e.g. from the download engine's parallel page fetches)
+  // would silently kill the isolate with zero trace, reading on-screen as a
+  // fast, unexplained notification flash if something then restarts it.
+  runZonedGuarded(
+    () => FlutterForegroundTask.setTaskHandler(DownloadTaskHandler()),
+    (error, stack) => FlutterForegroundTask.sendDataToMain({
+      'kind': 'fgsException',
+      'error': error.toString(),
+      'stack': stack.toString(),
+    }),
+  );
 }
 
 /// Bound on every HTTP call this isolate makes. None of `package:http`'s
@@ -88,6 +101,14 @@ class DownloadTaskHandler extends TaskHandler {
   /// chapters, so the drain loop re-checks before self-stopping.
   var _sawNewWork = false;
 
+  /// Diagnostics only: total passes through the drain loop and when the last
+  /// heartbeat was sent. This isolate has no crash-log wiring of its own (see
+  /// [_heartbeat]), so a bare loop-body log call would silently do nothing —
+  /// the heartbeat has to go through `sendDataToMain` like every other event
+  /// here, to reach the main isolate's diagnostic sink.
+  var _iterations = 0;
+  DateTime? _lastHeartbeat;
+
   /// The chapter the drain loop is actively downloading — already pulled off
   /// [_queue], so an `add` merge (which resends every `downloading` row on
   /// resume) would otherwise re-queue and double-download it.
@@ -117,71 +138,102 @@ class DownloadTaskHandler extends TaskHandler {
 
   @override
   Future<void> onStart(DateTime timestamp, TaskStarter starter) async {
-    final raw = await FlutterForegroundTask.getData<String>(key: kWorkOrderKey);
-    if (raw == null) {
-      // Nothing to do — self-stop so we don't sit as a zombie notification.
-      // Nothing else reports this: if Android itself restarts this service
-      // (TaskStarter.system — after killing it for resources, a common OS
-      // behavior for a foreground service under memory/battery pressure) and
-      // the work order was already wiped by the previous run's own stop
-      // handshake, this fires immediately on every restart with nothing to
-      // do — a start/instant-stop cycle entirely outside ensureServiceRunning,
-      // driven by the OS's own restart policy rather than anything in this
-      // app's own retry/backoff logic, which would explain a notification
-      // flashing far faster than any network timeout could produce.
-      FlutterForegroundTask.sendDataToMain({
-        'kind': 'noWorkOrder',
-        'starter': starter.name,
-      });
-      await FlutterForegroundTask.stopService();
-      return;
-    }
-    _order = BackgroundWorkOrder.fromJson(
-      jsonDecode(raw) as Map<String, Object?>,
-    );
-    final order = _order!;
-
-    // Plugin-free path building: the main isolate already resolved the offline
-    // base dir (path_provider lives in the root isolate), so we just wrap it.
-    _paths = OfflinePaths(order.baseDir);
-    _store = IoOfflinePageStore(_paths);
-    _log = BackgroundCompletionLog(File('${order.baseDir}/.bg_completion.log'));
-
-    _wifiOnly = order.wifiOnly;
-    _record = order.auth;
-    _broker = _buildBroker();
-
-    // The log has one writer at a time. A WorkManager catch-up run mid-flight
-    // checkpoints within seconds of a yield request; a stale holder expires by
-    // heartbeat age.
-    _lock = BackgroundDownloadLock(File('${order.baseDir}/.bg_lock'));
-    var acquired = await _lock!.acquire('fgs');
-    if (!acquired) {
-      await _lock!.requestYield();
-      for (var i = 0; i < 15 && !acquired; i++) {
-        await Future<void>.delayed(const Duration(seconds: 2));
-        acquired = await _lock!.acquire('fgs');
+    // Unconditional, before anything else can fail/branch/hang — the one
+    // signal that confirms this isolate's entry point actually ran at all.
+    // Every other diagnostic in this file depends on reaching some later
+    // branch; if a reported loop shows none of them, this is what tells us
+    // whether onStart runs repeatedly (and how fast) or never runs at all.
+    FlutterForegroundTask.sendDataToMain({
+      'kind': 'onStartEntered',
+      'starter': starter.name,
+    });
+    try {
+      final raw = await FlutterForegroundTask.getData<String>(
+        key: kWorkOrderKey,
+      );
+      if (raw == null) {
+        // Nothing to do — self-stop so we don't sit as a zombie notification.
+        // Nothing else reports this: if Android itself restarts this service
+        // (TaskStarter.system — after killing it for resources, a common OS
+        // behavior for a foreground service under memory/battery pressure) and
+        // the work order was already wiped by the previous run's own stop
+        // handshake, this fires immediately on every restart with nothing to
+        // do — a start/instant-stop cycle entirely outside ensureServiceRunning,
+        // driven by the OS's own restart policy rather than anything in this
+        // app's own retry/backoff logic, which would explain a notification
+        // flashing far faster than any network timeout could produce.
+        FlutterForegroundTask.sendDataToMain({
+          'kind': 'noWorkOrder',
+          'starter': starter.name,
+        });
+        await FlutterForegroundTask.stopService();
+        return;
       }
-    }
-    if (!acquired) {
-      // Still contended — leave the queue in drift; the next start retries.
-      // Nothing else reports this: without it, a lock held by a wedged other
-      // party (e.g. the WorkManager catch-up executor stuck on a hung request)
-      // makes this service start, spend ~30s failing to acquire, and stop —
-      // over and over, every time something re-triggers a start — showing as
-      // the notification repeatedly appearing and disappearing with no
-      // download ever actually attempted and nothing explaining why.
-      FlutterForegroundTask.sendDataToMain({'kind': 'lockFailed'});
-      await FlutterForegroundTask.stopService();
-      return;
-    }
+      _order = BackgroundWorkOrder.fromJson(
+        jsonDecode(raw) as Map<String, Object?>,
+      );
+      final order = _order!;
 
-    _queue.addAll(order.chapterIds);
-    _mangaOf.addAll(order.mangaIdByChapter);
-    _genOf.addAll(order.generationByChapter);
-    _total = _queue.length;
+      // Plugin-free path building: the main isolate already resolved the
+      // offline base dir (path_provider lives in the root isolate), so we
+      // just wrap it.
+      _paths = OfflinePaths(order.baseDir);
+      _store = IoOfflinePageStore(_paths);
+      _log = BackgroundCompletionLog(
+        File('${order.baseDir}/.bg_completion.log'),
+      );
 
-    await _drain();
+      _wifiOnly = order.wifiOnly;
+      _record = order.auth;
+      _broker = _buildBroker();
+
+      // The log has one writer at a time. A WorkManager catch-up run mid-flight
+      // checkpoints within seconds of a yield request; a stale holder expires
+      // by heartbeat age.
+      _lock = BackgroundDownloadLock(File('${order.baseDir}/.bg_lock'));
+      var acquired = await _lock!.acquire('fgs');
+      if (!acquired) {
+        await _lock!.requestYield();
+        for (var i = 0; i < 15 && !acquired; i++) {
+          await Future<void>.delayed(const Duration(seconds: 2));
+          acquired = await _lock!.acquire('fgs');
+        }
+      }
+      if (!acquired) {
+        // Still contended — leave the queue in drift; the next start retries.
+        // Nothing else reports this: without it, a lock held by a wedged other
+        // party (e.g. the WorkManager catch-up executor stuck on a hung
+        // request) makes this service start, spend ~30s failing to acquire,
+        // and stop — over and over, every time something re-triggers a
+        // start — showing as the notification repeatedly appearing and
+        // disappearing with no download ever actually attempted and nothing
+        // explaining why.
+        FlutterForegroundTask.sendDataToMain({'kind': 'lockFailed'});
+        await FlutterForegroundTask.stopService();
+        return;
+      }
+
+      _queue.addAll(order.chapterIds);
+      _mangaOf.addAll(order.mangaIdByChapter);
+      _genOf.addAll(order.generationByChapter);
+      _total = _queue.length;
+
+      await _drain();
+    } catch (e, st) {
+      // This isolate has no crash-log/error-zone wiring of its own (unlike
+      // the main isolate) — an uncaught exception anywhere above would just
+      // silently end onStart with NOTHING logged, and if something on the
+      // main isolate then reacts to the service no longer running by
+      // restarting it, that reads on-screen as a fast, silent, unexplained
+      // notification flash. Route it through the one channel proven to
+      // reach the main isolate's diagnostic sink instead of losing it.
+      FlutterForegroundTask.sendDataToMain({
+        'kind': 'fgsException',
+        'error': e.toString(),
+        'stack': st.toString(),
+      });
+      rethrow;
+    }
   }
 
   @override
@@ -245,6 +297,8 @@ class DownloadTaskHandler extends TaskHandler {
 
   Future<void> _drain() async {
     while (!_stopping && !_paused) {
+      _iterations++;
+      _heartbeat();
       final next = _queue.where((c) => !_cancelled.contains(c)).firstOrNull;
       if (next == null) {
         if (_sawNewWork) {
@@ -280,6 +334,28 @@ class DownloadTaskHandler extends TaskHandler {
       await _lock?.release();
       await FlutterForegroundTask.stopService();
     }
+  }
+
+  /// At most once a second: reports the drain loop is alive and what it's
+  /// about to do next. Diagnostic-only — added after several rounds of a
+  /// reported fast, silent notification-flash loop produced NOTHING in the
+  /// crash log from any of the terminal-status/error paths, meaning whatever
+  /// is looping never reaches one of those — this is the one thing that fires
+  /// on every single pass, regardless of what happens after.
+  void _heartbeat() {
+    final now = DateTime.now();
+    if (_lastHeartbeat != null &&
+        now.difference(_lastHeartbeat!) < const Duration(seconds: 1)) {
+      return;
+    }
+    _lastHeartbeat = now;
+    FlutterForegroundTask.sendDataToMain({
+      'kind': 'heartbeat',
+      'iteration': _iterations,
+      'queueLen': _queue.length,
+      'nextChapterId': _queue.where((c) => !_cancelled.contains(c)).firstOrNull,
+      'inFlight': _inFlight,
+    });
   }
 
   /// Returns true when the chapter was parked (server unreachable) — the drain

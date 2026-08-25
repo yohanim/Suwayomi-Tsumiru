@@ -127,8 +127,14 @@ class BackgroundDownloadController with WidgetsBindingObserver {
   /// work order. Wi-Fi-only is enforced here: won't start on a metered
   /// connection when the setting is on.
   /// [force] is for signals that supersede the park backoff: an explicit user
-  /// action, or proof the server answered.
-  Future<void> ensureServiceRunning({bool force = false}) async {
+  /// action, or proof the server answered. [reason] is diagnostic-only: which
+  /// call site triggered this — tags the eventual `startService` log line so
+  /// a burst of restarts can be attributed to a specific caller (or to none
+  /// of them, which would point at something outside our own code).
+  Future<void> ensureServiceRunning({
+    bool force = false,
+    String reason = 'unspecified',
+  }) async {
     if (!Platform.isAndroid) return;
     if (_suppressRestarts) return;
     // PAUSE GATE — first line so every restart path (start, onEnqueued,
@@ -173,6 +179,10 @@ class BackgroundDownloadController with WidgetsBindingObserver {
       // steps above, and pause() only messages a *running* service — without
       // this recheck we'd start straight into a paused state.
       if (_isPaused()) return;
+      recordDiagnostic(
+        '[${DateTime.now().toIso8601String()}] offline-fgs: '
+        'calling-startService reason=$reason pendingCount=${pending.length}\n',
+      );
       final res = await FlutterForegroundTask.startService(
         serviceTypes: [ForegroundServiceTypes.dataSync],
         notificationTitle: 'Downloading chapters',
@@ -218,14 +228,17 @@ class BackgroundDownloadController with WidgetsBindingObserver {
   /// Called after the caller has written drift `queued` for [chapterIds]. Just
   /// ensures the service owns the queue (it reads drift, not the argument).
   Future<void> onEnqueued(List<int> chapterIds) =>
-      requestStart(userInitiated: true);
+      requestStart(userInitiated: true, reason: 'onEnqueued');
 
   /// Something outside the controller wants downloads moving. A user action
   /// outranks the park backoff outright; an automated pass only brings the next
   /// attempt forward, so a trigger that repeats can't defeat it.
-  Future<void> requestStart({bool userInitiated = false}) {
+  Future<void> requestStart({
+    bool userInitiated = false,
+    String reason = 'requestStart',
+  }) {
     if (!userInitiated) _retrySooner();
-    return ensureServiceRunning(force: userInitiated);
+    return ensureServiceRunning(force: userInitiated, reason: reason);
   }
 
   /// True when the user has paused all on-device downloads (persisted flag).
@@ -250,7 +263,7 @@ class BackgroundDownloadController with WidgetsBindingObserver {
   }
 
   /// Resume on-device downloads (caller has cleared the persisted flag first).
-  Future<void> resume() => ensureServiceRunning(force: true);
+  Future<void> resume() => ensureServiceRunning(force: true, reason: 'resume');
 
   Future<void> stopAndClearWorkOrder() async {
     if (!Platform.isAndroid) return;
@@ -315,12 +328,34 @@ class BackgroundDownloadController with WidgetsBindingObserver {
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (!Platform.isAndroid) return;
+    // Diagnostic: correlates a restart burst with the app itself being
+    // backgrounded/foregrounded (or recreated) around the same time — a
+    // rapid resumed/paused/resumed cycle here, or a "resumed" that isn't
+    // preceded by an app-initiated pause, would point at the OS itself
+    // cycling the app, not our own retry logic.
+    recordDiagnostic(
+      '[${DateTime.now().toIso8601String()}] offline-fgs: '
+      'app-lifecycle ${state.name}\n',
+    );
     if (state == AppLifecycleState.resumed) {
       // Catch drift up from the durable log for live UI. No ownership change —
       // the worker still owns the queue.
       unawaited(replayOnResume());
     }
     // paused/hidden/detached: NOTHING — the FGS already owns the queue.
+  }
+
+  @override
+  void didHaveMemoryPressure() {
+    // Diagnostic: Flutter's own low-memory callback (Android's onTrimMemory/
+    // onLowMemory funnelled through the engine). If this fires right before a
+    // restart burst, the OS is killing the process/service for memory, not
+    // our own code looping — a signal no Dart-level exception handler could
+    // ever see, since there's no exception involved at all.
+    recordDiagnostic(
+      '[${DateTime.now().toIso8601String()}] offline-fgs: '
+      'memory-pressure\n',
+    );
   }
 
   /// Replay the completion log into drift (live-UI catch-up on resume).
@@ -330,7 +365,7 @@ class BackgroundDownloadController with WidgetsBindingObserver {
     // cap, a swipe-away); restart if pending work remains — ensureServiceRunning
     // is idempotent/no-op if the worker's still alive.
     final pending = await _pendingChapters();
-    if (pending.isNotEmpty) await ensureServiceRunning();
+    if (pending.isNotEmpty) await ensureServiceRunning(reason: 'resumeReplay');
   }
 
   /// At launch: replay any log left by a previous run, then — if drift still has
@@ -351,7 +386,9 @@ class BackgroundDownloadController with WidgetsBindingObserver {
   Future<void> maybeStartAfterReplay() async {
     if (!Platform.isAndroid) return;
     final pending = await _pendingChapters();
-    if (pending.isNotEmpty) await ensureServiceRunning();
+    if (pending.isNotEmpty) {
+      await ensureServiceRunning(reason: 'launchReplay');
+    }
   }
 
   Future<void> _replay() async {
@@ -395,6 +432,11 @@ class BackgroundDownloadController with WidgetsBindingObserver {
     // the just-wiped catalog — drop everything until the clear releases the flag.
     if (_suppressRestarts) return;
     switch (data['kind']) {
+      case 'onStartEntered':
+        recordDiagnostic(
+          '[${DateTime.now().toIso8601String()}] offline-fgs: '
+          'onStart-entered starter=${data['starter']}\n',
+        );
       // Live foreground UI only — mark downloading + accumulate page rows so
       // the progress arc animates; the durable record is the completion log,
       // replayed on resume.
@@ -433,6 +475,27 @@ class BackgroundDownloadController with WidgetsBindingObserver {
           'starter=system means Android itself is repeatedly restarting the '
           'service, not this app\'s own retry logic\n',
         );
+      case 'heartbeat':
+        // Fires on every drain-loop pass (throttled to 1/s worker-side) — the
+        // one diagnostic that doesn't depend on reaching any particular
+        // terminal status, so it should appear even if whatever is looping
+        // never hits a branch any other log covers.
+        recordDiagnostic(
+          '[${DateTime.now().toIso8601String()}] offline-fgs: '
+          'heartbeat iteration=${data['iteration']} queueLen=${data['queueLen']} '
+          'nextChapterId=${data['nextChapterId']} inFlight=${data['inFlight']}\n',
+        );
+        if (data['iteration'] == 1) {
+          _checkRestartLoop(data['nextChapterId'] as int?);
+        }
+      case 'fgsException':
+        // This isolate has no crash-log wiring of its own — an uncaught
+        // exception there would otherwise just silently end the run with
+        // nothing logged at all.
+        recordDiagnostic(
+          '[${DateTime.now().toIso8601String()}] offline-fgs: '
+          'UNCAUGHT EXCEPTION ${data['error']}\n${data['stack']}\n',
+        );
     }
   }
 
@@ -457,6 +520,20 @@ class BackgroundDownloadController with WidgetsBindingObserver {
   /// re-enqueued by `_pendingChapters()` on every `afterDrained` restart.
   static const _maxCommitFailures = 3;
   final Map<int, int> _commitFailures = {};
+
+  /// Second, independent circuit breaker for a failure mode the park-based one
+  /// above can't see: the service getting killed/restarted (by the OS or
+  /// anything else) BEFORE a single chapter attempt ever finishes — so it
+  /// never parks, never completes, never logs anything at all, just restarts
+  /// on the exact same chapter over and over. Caught here by watching each
+  /// fresh restart's very first heartbeat (iteration 1): if it names the same
+  /// chapter [_maxRestartsPerChapter] times within [_restartLoopWindow], that
+  /// chapter is the reason for the loop, not the rest of the queue.
+  static const _maxRestartsPerChapter = 5;
+  static const _restartLoopWindow = Duration(seconds: 20);
+  int? _restartLoopChapterId;
+  int _restartLoopCount = 0;
+  DateTime? _restartLoopWindowStart;
 
   /// The worker gave up on an unreachable server and stopped with the queue
   /// intact — OR, just as often in practice, gave up resolving/downloading
@@ -493,6 +570,43 @@ class BackgroundDownloadController with WidgetsBindingObserver {
     if (delay == _minParkBackoff) unawaited(_notifyPaused(_PauseReason.server));
   }
 
+  /// Sees the chapter named by a fresh restart's first heartbeat. If the same
+  /// chapter shows up this way repeatedly in a short window, something is
+  /// killing/restarting the service before that chapter's attempt can ever
+  /// finish — it never reaches [_onParked] (which needs a completed attempt
+  /// to count against), so nothing else catches this. Marking it `error`
+  /// directly is the only way to break a loop that never produces an event
+  /// any other safeguard can react to.
+  void _checkRestartLoop(int? chapterId) {
+    if (chapterId == null) return;
+    final now = DateTime.now();
+    if (chapterId != _restartLoopChapterId ||
+        _restartLoopWindowStart == null ||
+        now.difference(_restartLoopWindowStart!) > _restartLoopWindow) {
+      _restartLoopChapterId = chapterId;
+      _restartLoopCount = 1;
+      _restartLoopWindowStart = now;
+      return;
+    }
+    _restartLoopCount++;
+    if (_restartLoopCount >= _maxRestartsPerChapter) {
+      recordDiagnostic(
+        '[${now.toIso8601String()}] offline-fgs: '
+        'giving-up-on-chapter (restart-loop) chapterId=$chapterId — seen as '
+        'the first thing attempted across $_restartLoopCount service '
+        'restarts within ${_restartLoopWindow.inSeconds}s, none of which ran '
+        'long enough to park or complete; marking it error so it stops '
+        'blocking the rest of the queue\n',
+      );
+      unawaited(
+        _db.setChapterDeviceState(chapterId, OfflineDeviceState.error),
+      );
+      _restartLoopChapterId = null;
+      _restartLoopCount = 0;
+      _restartLoopWindowStart = null;
+    }
+  }
+
   /// The delay to wait now, doubling what the next one will be.
   Duration _nextBackoff() {
     final delay = _parkBackoff;
@@ -512,7 +626,7 @@ class BackgroundDownloadController with WidgetsBindingObserver {
 
   Future<void> _onParkExpired() async {
     _parkedUntil = null;
-    await ensureServiceRunning();
+    await ensureServiceRunning(reason: 'parkExpired');
     // The start can decline — Android refusing the service, Wi-Fi-only holding
     // it back — and the deadline is gone by then, so without re-arming here the
     // queue would sit with nothing left to wake it.
@@ -587,7 +701,7 @@ class BackgroundDownloadController with WidgetsBindingObserver {
     }
     final pending = await _pendingChapters();
     if (pending.isNotEmpty) {
-      await ensureServiceRunning();
+      await ensureServiceRunning(reason: 'afterDrained');
       return;
     }
     await _notifyDownloadsComplete();
@@ -717,6 +831,13 @@ class BackgroundDownloadController with WidgetsBindingObserver {
           // → infinite phantom-download loop. Fix: reset to `queued` so it
           // re-downloads from scratch, or mark `error` after _maxCommitFailures
           // consecutive failures so it leaves the queue entirely.
+          recordDiagnostic(
+            '[${DateTime.now().toIso8601String()}] offline-fgs: '
+            'commit-not-published mangaId=${data['mangaId']} '
+            'chapterId=$chapterId result=$result rowFound=${ch != null} '
+            'rowState=${ch?.deviceState} rowGeneration=${ch?.downloadGeneration} '
+            'eventGeneration=${data['gen']}\n',
+          );
           if (ch != null &&
               ch.deviceState != OfflineDeviceState.none &&
               result != ChapterCommitResult.refused) {
@@ -727,13 +848,36 @@ class BackgroundDownloadController with WidgetsBindingObserver {
               await _db.setChapterDeviceState(
                   chapterId, OfflineDeviceState.error);
               _sessionFailed++;
+              recordDiagnostic(
+                '[${DateTime.now().toIso8601String()}] offline-fgs: '
+                'commit-giving-up chapterId=$chapterId result=$result '
+                'after $attempts attempts — marked error\n',
+              );
             } else {
               await _db.setChapterDeviceState(
                   chapterId, OfflineDeviceState.queued, bytes: 0);
+              recordDiagnostic(
+                '[${DateTime.now().toIso8601String()}] offline-fgs: '
+                'commit-retry chapterId=$chapterId result=$result '
+                'attempt $attempts/$_maxCommitFailures — reset to queued\n',
+              );
             }
           }
         }
       } else {
+        // Diagnostic: confirms whether this event lands while the row still
+        // reads `queued` — the chapterStart/terminal-event race that used to
+        // strand a fast-failing chapter there forever (see
+        // applyBackgroundTerminalState's own comment for the mechanism).
+        final priorState = (await _db.chapterById(chapterId))?.deviceState;
+        if (priorState == OfflineDeviceState.queued) {
+          recordDiagnostic(
+            '[${DateTime.now().toIso8601String()}] offline-fgs: '
+            'terminal-event-raced-chapterStart mangaId=${data['mangaId']} '
+            'chapterId=$chapterId status=$status priorState=$priorState — '
+            'previously would have been silently skipped and left stuck\n',
+          );
+        }
         await applyBackgroundTerminalState(
           db: _db,
           chapterId: chapterId,
@@ -757,7 +901,9 @@ class BackgroundDownloadController with WidgetsBindingObserver {
     await _wipeWorkOrderAuth();
     // Anything queued during the async stop? Restart to pick it up.
     final pending = await _pendingChapters();
-    if (pending.isNotEmpty) await ensureServiceRunning();
+    if (pending.isNotEmpty) {
+      await ensureServiceRunning(reason: 'serviceStoppedRecheck');
+    }
   }
 
   // ---------------------------------------------------------------------------
@@ -923,7 +1069,7 @@ class BackgroundDownloadController with WidgetsBindingObserver {
       final pending = await _pendingChapters();
       if (pending.isEmpty) return;
       _retrySooner();
-      await ensureServiceRunning();
+      await ensureServiceRunning(reason: 'connectivityRestored');
     }());
   }
 
