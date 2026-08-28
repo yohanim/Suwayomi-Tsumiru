@@ -9,13 +9,12 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 import '../../../../../../../constants/enum.dart';
 import '../../../../../../../utils/extensions/custom_extensions.dart';
-import '../../../../../../settings/presentation/reader/widgets/reader_mode_tile/reader_mode_tile.dart';
-import '../../../../../../settings/presentation/reader/widgets/reader_navigation_layout_tile/reader_navigation_layout_tile.dart';
 import '../../../../../../settings/presentation/reader/widgets/long_strip_width_limit_slider/long_strip_width_limit_slider.dart';
+import '../../../../../../settings/presentation/reader/widgets/reader_mode_tile/reader_mode_tile.dart';
 import '../../../../../../settings/presentation/reader/widgets/reader_padding_slider/reader_padding_slider.dart';
 import '../../../controller/reader_mode_adapter.dart';
-import '../../../utils/reader_mode_kind.dart';
 import '../../../controller/reader_settings_model.dart';
+import '../../../utils/reader_mode_kind.dart';
 import 'int_slider_tile.dart';
 
 /// Reading-mode tab: chip rows for the common settings,

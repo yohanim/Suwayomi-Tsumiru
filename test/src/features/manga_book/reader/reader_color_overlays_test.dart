@@ -173,7 +173,7 @@ void main() {
             home: Stack(
               fit: StackFit.expand,
               children: [
-                if (sibling != null) sibling,
+                ?sibling,
                 const ReaderColorOverlays(),
               ],
             ),

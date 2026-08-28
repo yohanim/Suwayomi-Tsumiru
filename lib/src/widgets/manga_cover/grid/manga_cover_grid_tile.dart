@@ -114,7 +114,7 @@ class MangaCoverGridTile extends StatelessWidget {
                 PageRouteBuilder(
                   fullscreenDialog: true,
                   opaque: false,
-                  pageBuilder: (context, _, __) => MangaThumbnailViewer(
+                  pageBuilder: (context, _, _) => MangaThumbnailViewer(
                     imageUrl: manga.thumbnailUrl ?? "",
                   ),
                   transitionsBuilder:

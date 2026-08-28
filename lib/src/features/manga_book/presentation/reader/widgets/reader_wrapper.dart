@@ -24,14 +24,12 @@ import '../../../../settings/presentation/reader/widgets/reader_initial_overlay_
 import '../../../../settings/presentation/reader/widgets/reader_invert_tap_tile/reader_invert_tap_tile.dart';
 import '../../../../settings/presentation/reader/widgets/reader_last_page_swipe_tile/reader_last_page_swipe_tile.dart';
 import '../../../../settings/presentation/reader/widgets/reader_mode_tile/reader_mode_tile.dart';
-import '../../../../settings/presentation/reader/widgets/reader_navigation_layout_tile/reader_navigation_layout_tile.dart';
 import '../../../../settings/presentation/reader/widgets/reader_padding_slider/reader_padding_slider.dart';
 import '../../../../settings/presentation/reader/widgets/reader_paged_prefs/reader_paged_prefs.dart';
 import '../../../../settings/presentation/reader/widgets/reader_swipe_toggle_tile/reader_swipe_chapter_toggle_tile.dart';
-import '../../../../settings/presentation/reader/widgets/reader_tap_invert/reader_tap_invert.dart';
-import '../../../../settings/presentation/reader/widgets/tap_zones_overlay/tap_zones_overlay.dart';
 import '../../../../settings/presentation/reader/widgets/reader_volume_tap_invert_tile/reader_volume_tap_invert_tile.dart';
 import '../../../../settings/presentation/reader/widgets/reader_volume_tap_tile/reader_volume_tap_tile.dart';
+import '../../../../settings/presentation/reader/widgets/tap_zones_overlay/tap_zones_overlay.dart';
 import '../../../data/manga_book/manga_book_repository.dart';
 import '../../../domain/chapter/chapter_model.dart';
 import '../../../domain/chapter_page/chapter_page_model.dart';
@@ -367,13 +365,13 @@ class ReaderWrapper extends HookConsumerWidget {
         final chapterSubscription =
             providerContainer.listen<AsyncValue<ChapterDto?>>(
           chapterProvider(chapterId: chapterId),
-          (_, __) {},
+          (_, _) {},
           fireImmediately: true,
         );
         final pagesSubscription =
             providerContainer.listen<AsyncValue<ChapterPagesDto?>>(
           chapterPagesProvider(chapterId: chapterId),
-          (_, __) {},
+          (_, _) {},
           fireImmediately: true,
         );
         prefetchClosers.value[chapterId] = [

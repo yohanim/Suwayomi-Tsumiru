@@ -89,8 +89,8 @@ Future<List<MangaDto>?> libraryWithOfflineFallback({
       final fromChapters = int.tryParse(lastReadByManga[m.id] ?? '');
       final fromManga = int.tryParse(m.lastReadAt ?? '');
       final best = [
-        if (fromChapters != null) fromChapters,
-        if (fromManga != null) fromManga,
+        ?fromChapters,
+        ?fromManga,
       ];
       if (best.isEmpty) return null;
       return best.reduce((a, b) => a > b ? a : b).toString();

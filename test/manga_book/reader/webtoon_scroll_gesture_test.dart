@@ -2,7 +2,6 @@
 // must not register the outer swipe recognizers that steal the single-finger
 // drag from ZoomView (see multichapter_continuous_reader_mode.dart).
 
-import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';

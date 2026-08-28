@@ -12,7 +12,11 @@ class _InMemorySecureStorage implements FlutterSecureStorage {
       AppleOptions? iOptions, AndroidOptions? aOptions, LinuxOptions? lOptions,
       WebOptions? webOptions, AppleOptions? mOptions,
       WindowsOptions? wOptions}) async {
-    if (value == null) _store.remove(key); else _store[key] = value;
+    if (value == null) {
+      _store.remove(key);
+    } else {
+      _store[key] = value;
+    }
   }
   @override
   Future<String?> read({required String key, AppleOptions? iOptions,

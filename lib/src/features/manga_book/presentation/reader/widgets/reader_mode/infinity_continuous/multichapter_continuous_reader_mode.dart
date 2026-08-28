@@ -9,21 +9,19 @@ import 'dart:io';
 import 'dart:math' as math;
 
 import 'package:flutter/foundation.dart';
-import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
-import 'package:gap/gap.dart';
 import 'package:flutter/rendering.dart' show ScrollDirection;
 import 'package:flutter_hooks/flutter_hooks.dart';
+import 'package:gap/gap.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 
 import '../../../../../../../constants/db_keys.dart';
 import '../../../../../../../constants/enum.dart';
 import '../../../../../../../utils/extensions/custom_extensions.dart';
-import '../../../../../../../utils/misc/toast/toast.dart';
 import '../../../../../../../utils/misc/app_utils.dart';
+import '../../../../../../../utils/misc/toast/toast.dart';
 import '../../../../../../../utils/platform/platform_runtime.dart';
-import '../../mouse_wheel_speed.dart';
 import '../../../../../../../widgets/server_image.dart';
 import '../../../../../../../widgets/zoom/scroll_offset_to_scroll_controller.dart';
 import '../../../../../../history/presentation/history_controller.dart';
@@ -46,6 +44,7 @@ import '../../../controller/auto_scroll_controller.dart';
 import '../../../controller/reader_controller.dart';
 import '../../../utils/flush_progress_on_lifecycle.dart';
 import '../../../utils/reader_initial_page.dart';
+import '../../mouse_wheel_speed.dart';
 import '../../reader_wrapper.dart';
 import '../reader_zoom_view.dart';
 import 'infinity_continuous_config.dart';
@@ -702,7 +701,7 @@ class MultiChapterContinuousReaderMode extends HookConsumerWidget {
         // caches for the next attempt.
         final sub = ref.listenManual(
           chapterPagesProvider(chapterId: next.id),
-          (_, __) {},
+          (_, _) {},
         );
         final fetch = ref.read(chapterPagesProvider(chapterId: next.id).future);
         // Release the hold when the FETCH ends, not when the timeout fires —
@@ -755,7 +754,7 @@ class MultiChapterContinuousReaderMode extends HookConsumerWidget {
         // Same held-subscription + timeout treatment as loadNextChapter above.
         final sub = ref.listenManual(
           chapterPagesProvider(chapterId: prev.id),
-          (_, __) {},
+          (_, _) {},
         );
         final fetch = ref.read(chapterPagesProvider(chapterId: prev.id).future);
         fetch.whenComplete(sub.close).ignore();
@@ -1289,7 +1288,7 @@ class MultiChapterContinuousReaderMode extends HookConsumerWidget {
                 .clamp(1, 1 << 20)
             : null,
         imageUrl: loc.imageUrl,
-        progressIndicatorBuilder: (_, __, progress) => placeholderBox(
+        progressIndicatorBuilder: (_, _, progress) => placeholderBox(
           child: Center(
             child: CircularProgressIndicator(value: progress.progress),
           ),

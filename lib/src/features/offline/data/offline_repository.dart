@@ -9,9 +9,9 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../../../constants/db_keys.dart';
+import '../../../global_providers/global_providers.dart';
 import '../../../utils/logger/logger.dart';
 import '../../manga_book/data/manga_book/manga_book_repository.dart';
-import '../../../global_providers/global_providers.dart';
 import 'offline_database.dart';
 import 'offline_page_store.dart';
 import 'offline_paths.dart';

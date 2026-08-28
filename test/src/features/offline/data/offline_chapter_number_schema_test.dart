@@ -135,7 +135,7 @@ void main() {
           "INSERT INTO offline_mangas (id, title, updated_at, in_library_at) "
           "VALUES (1, 'M1', 0, '100')");
       v8.execute('PRAGMA user_version = 8');
-      v8.dispose();
+      v8.close();
 
       final db = testOfflineDatabaseFile(dbPath);
       final c = await (db.select(db.offlineChapters)

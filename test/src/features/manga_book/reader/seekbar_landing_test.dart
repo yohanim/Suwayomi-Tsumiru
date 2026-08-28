@@ -59,7 +59,7 @@ void main() {
             itemCount: 40,
             minCacheExtent: screen * 3,
             itemBuilder: itemBuilder,
-            separatorBuilder: (_, __) => const SizedBox.shrink(),
+            separatorBuilder: (_, _) => const SizedBox.shrink(),
           ),
         ),
       ),
@@ -188,7 +188,7 @@ class _MiniReaderState extends State<_MiniReader> {
       itemPositionsListener: listener,
       itemCount: 40,
       minCacheExtent: screen * 3,
-      separatorBuilder: (_, __) => const SizedBox.shrink(),
+      separatorBuilder: (_, _) => const SizedBox.shrink(),
       itemBuilder: (context, i) {
         final h = measured[i] ?? _placeholder();
         return _MeasuringPage(

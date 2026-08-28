@@ -91,7 +91,7 @@ Future<ProviderContainer> _container(
 
 /// Reads the model state after the manga (and its meta) has resolved.
 Future<ReaderSettingsState> _resolvedState(ProviderContainer container) async {
-  container.listen(readerSettingsModelProvider(1), (_, __) {});
+  container.listen(readerSettingsModelProvider(1), (_, _) {});
   await container.read(mangaWithIdProvider(mangaId: 1).future);
   await Future<void>.value();
   return container.read(readerSettingsModelProvider(1));

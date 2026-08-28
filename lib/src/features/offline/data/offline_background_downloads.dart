@@ -12,7 +12,6 @@ import '../../../constants/endpoints.dart';
 import '../../../constants/enum.dart';
 import '../../../global_providers/global_providers.dart';
 import '../../../utils/extensions/custom_extensions.dart';
-import '../../../utils/logger/logger.dart';
 import '../../../utils/platform/is_android_native.dart';
 import '../../auth/data/auth_coordinator.dart';
 import '../../manga_book/data/manga_book/manga_book_repository.dart';
@@ -20,13 +19,12 @@ import '../../settings/presentation/server/widget/client/server_port_tile/server
 import '../../settings/presentation/server/widget/client/server_url_tile/server_url_tile.dart';
 import 'chapter_commit.dart';
 import 'chapter_download_engine.dart';
-import 'offline_database.dart';
 import 'offline_download_coordinator.dart';
 import 'offline_download_progress.dart';
 import 'offline_download_providers.dart';
 import 'offline_repository.dart';
-import 'server_reachability.dart';
 import 'offline_settings_providers.dart';
+import 'server_reachability.dart';
 
 part 'offline_background_downloads.g.dart';
 

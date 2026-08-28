@@ -498,7 +498,7 @@ void main() {
     });
 
     test('wrong Basic creds → 401 → false', () async {
-      final mock = MockClient.streaming((_, __) async => http.StreamedResponse(
+      final mock = MockClient.streaming((_, _) async => http.StreamedResponse(
           Stream.value(utf8.encode('')), 401,
           headers: {'www-authenticate': 'Basic'}));
       expect(
@@ -508,7 +508,7 @@ void main() {
     });
 
     test('reached but not Suwayomi (200 non-JSON) → false', () async {
-      final mock = MockClient.streaming((_, __) async =>
+      final mock = MockClient.streaming((_, _) async =>
           http.StreamedResponse(Stream.value(utf8.encode('<html>')), 200));
       expect(
           await basicAuthConfirms('http://h:4567',
@@ -540,7 +540,7 @@ void main() {
     });
 
     test('a 401 status reads as not authorised', () async {
-      final mock = MockClient.streaming((_, __) async =>
+      final mock = MockClient.streaming((_, _) async =>
           http.StreamedResponse(Stream.value(utf8.encode('')), 401));
       expect(
           await authProbeAuthorized('http://h:4567',
@@ -570,7 +570,7 @@ void main() {
       // surface answers, but the @RequireAuth probe stays Unauthorized because
       // a Basic header is meaningless to that server. THIS is the bug guard —
       // a wrong auth type must NOT read as authorised.
-      final mock = MockClient.streaming((_, __) async => http.StreamedResponse(
+      final mock = MockClient.streaming((_, _) async => http.StreamedResponse(
           Stream.value(utf8.encode(_authUnauthorized)), 200));
       expect(
           await authProbeAuthorized('http://h:4567',
@@ -627,7 +627,7 @@ void main() {
     });
 
     test('wrong credentials (neither authorises) → null', () async {
-      final mock = MockClient.streaming((_, __) async =>
+      final mock = MockClient.streaming((_, _) async =>
           http.StreamedResponse(
               Stream.value(utf8.encode(_authUnauthorized)), 200));
       final mode = await verifyAuthMode(

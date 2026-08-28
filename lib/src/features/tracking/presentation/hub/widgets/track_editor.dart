@@ -94,7 +94,7 @@ class TrackEditor extends ConsumerWidget {
                 tracker.icon,
                 width: 20,
                 height: 20,
-                errorBuilder: (_, __, ___) =>
+                errorBuilder: (_, _, _) =>
                     const Icon(Icons.sync_rounded, size: 20),
               ),
               const SizedBox(width: 8),

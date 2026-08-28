@@ -18,7 +18,7 @@ void main() {
       home: Scaffold(
         body: TrackerCredentialsSheet(
           trackerName: 'MangaUpdates',
-          onSubmit: (_, __) {},
+          onSubmit: (_, _) {},
         ),
       ),
     ));

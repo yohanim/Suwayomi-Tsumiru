@@ -18,9 +18,9 @@ import '../../../constants/endpoints.dart';
 import '../../../constants/enum.dart';
 import '../../../global_providers/global_providers.dart';
 import '../../../utils/extensions/custom_extensions.dart';
-import '../../../utils/network/graphql_errors.dart';
 import '../../../utils/logger/logger.dart';
 import '../../../utils/misc/toast/toast.dart';
+import '../../../utils/network/graphql_errors.dart';
 import '../../../utils/platform/is_android_native.dart';
 import '../../auth/data/auth_credentials_store.dart';
 import '../../library/presentation/library/controller/library_manga_list.dart';
@@ -54,7 +54,6 @@ import 'offline_reconciler.dart';
 import 'offline_repository.dart';
 import 'offline_series_entry.dart';
 import 'offline_settings_providers.dart';
-import 'offline_types.dart';
 import 'reconcile_types.dart';
 
 part 'offline_download_providers.g.dart';
@@ -481,7 +480,7 @@ Future<bool> recordReadState(
 /// isn't loaded.
 @visibleForTesting
 Future<int?> whileReadingDeleteTarget(
-  _Read read,
+  ReadFn read,
   int mangaId,
   int readChapterId,
   int slots,
@@ -534,7 +533,7 @@ Future<int?> whileReadingDeleteTarget(
 
 /// The server delete settings, loaded from the server (null offline / on error,
 /// so the server delete simply doesn't run — it needs a connection anyway).
-Future<DeleteChaptersSettings?> _serverDeleteSettings(_Read read) async {
+Future<DeleteChaptersSettings?> _serverDeleteSettings(ReadFn read) async {
   try {
     return await read(deleteChaptersSettingsControllerProvider.future);
   } catch (_) {
@@ -544,7 +543,7 @@ Future<DeleteChaptersSettings?> _serverDeleteSettings(_Read read) async {
 
 /// Lets the delete chain run off a WidgetRef mid-read or the root
 /// [ProviderContainer] at reader exit, where the route's ref is already gone.
-typedef _Read = T Function<T>(ProviderListenable<T> provider);
+typedef ReadFn = T Function<T>(ProviderListenable<T> provider);
 
 /// Chapters currently open in the reader — shields them from reconcile eviction
 /// while the reader is on screen. The reader records each chapter it opens and
@@ -711,7 +710,7 @@ Future<void> maybeDeleteOnManualLocal(
 /// un-pinned (via [deleteChapterFromDevice]) so the reconciler doesn't just
 /// re-download it; the server copy is untouched.
 Future<void> _deleteDeviceCopyIfDeletable(
-  _Read read,
+  ReadFn read,
   int chapterId,
   bool allowBookmarked,
 ) async {
@@ -755,7 +754,7 @@ Future<void> maybeDeleteOnManualServer(
 /// bookmark gate also honours a bookmark made offline that hasn't reached the
 /// server yet.
 Future<void> _deleteServerCopyIfDeletable(
-  _Read read,
+  ReadFn read,
   int mangaId,
   int chapterId,
   bool allowBookmarked,
@@ -933,14 +932,14 @@ Future<void> pushPendingProgress(
 /// Enforce device ⊆ server: when chapters are deleted on the server, drop any
 /// device copies too. Silent; no-op when offline is unavailable.
 ///
-/// Takes a plain read function ([_Read]) rather than a [WidgetRef]: callers
+/// Takes a plain read function ([ReadFn]) rather than a [WidgetRef]: callers
 /// that fire this off after an earlier `await` (a bulk/delete action whose
 /// widget or bottom bar may have unmounted by the time this runs) must pass a
 /// `ProviderContainer.read` tear-off instead of the widget's own `ref.read` —
 /// the widget's `ref` throws once its element is disposed, but a container
 /// obtained up front stays valid for as long as the app does.
 Future<void> cascadeServerDeleteToDevice(
-  _Read read,
+  ReadFn read,
   List<int> chapterIds,
 ) async {
   if (read(offlineDownloadManagerProvider) == null) return;
@@ -953,7 +952,7 @@ Future<void> cascadeServerDeleteToDevice(
 Future<void> deleteChapterFromDevice(WidgetRef ref, int chapterId) =>
     _deleteChapterFromDeviceRead(ref.read, chapterId);
 
-Future<void> _deleteChapterFromDeviceRead(_Read read, int chapterId) async {
+Future<void> _deleteChapterFromDeviceRead(ReadFn read, int chapterId) async {
   final manager = read(offlineDownloadManagerProvider);
   if (manager == null) return;
   await _deleteChapterFromDeviceCore(

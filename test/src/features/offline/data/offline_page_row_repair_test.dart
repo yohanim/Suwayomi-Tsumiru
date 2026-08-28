@@ -12,7 +12,6 @@ import 'package:tsumiru/src/features/offline/data/offline_database.dart';
 import 'package:tsumiru/src/features/offline/data/offline_page_store_io.dart';
 import 'package:tsumiru/src/features/offline/data/offline_paths.dart';
 import 'package:tsumiru/src/features/offline/data/offline_repository.dart';
-import 'package:tsumiru/src/features/offline/data/offline_types.dart';
 
 import '../../../../helpers/offline_test_db.dart';
 

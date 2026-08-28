@@ -5,7 +5,6 @@
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import 'package:graphql/client.dart';
-import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../../../../global_providers/global_providers.dart';
@@ -31,7 +30,7 @@ class DownloadsRepository {
           ),
         ),
       )
-      .getData((data) => null);
+      .getData((data) {});
 
   Future<void> stopDownloads() => client
       .mutate$StopDownloader(
@@ -41,7 +40,7 @@ class DownloadsRepository {
           ),
         ),
       )
-      .getData((data) => null);
+      .getData((data) {});
   Future<void> clearDownloads() => client
       .mutate$ClearDownloader(
         Options$Mutation$ClearDownloader(
@@ -50,7 +49,7 @@ class DownloadsRepository {
           ),
         ),
       )
-      .getData((data) => null);
+      .getData((data) {});
 
   Future<void> addChaptersBatchToDownloadQueue(List<int> chapterIds) => client
       .mutate$EnqueueChapterDownloads(
@@ -60,7 +59,7 @@ class DownloadsRepository {
           ),
         ),
       )
-      .getData((data) => null);
+      .getData((data) {});
 
   Future<void> removeChapterFromDownloadQueue(int chapterId) => client
       .mutate$DequeueChapterDownloads(
@@ -70,7 +69,7 @@ class DownloadsRepository {
           ),
         ),
       )
-      .getData((data) => null);
+      .getData((data) {});
 
   Future<DownloadStatusDto?> reorderDownload(int chapterId, int to) => client
       .mutate$ReorderChapterDownload(

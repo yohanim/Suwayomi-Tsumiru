@@ -29,7 +29,7 @@ void main() {
       chapterId: 2,
       pages: _pages(10),
       isCancelled: () => false,
-      onPageStored: (i, _, __) async => reported.add(i),
+      onPageStored: (i, _, _) async => reported.add(i),
     );
     expect(out.succeeded, true);
     expect(out.storedPages.length, 10);

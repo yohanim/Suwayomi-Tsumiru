@@ -19,19 +19,20 @@ class MangaChapterDisplay extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final ChapterDisplay display =
         ref.watch(mangaChapterDisplayModeProvider) ?? DBKeys.chapterDisplay.initial;
-    return ListView(
-      children: [
-        const Divider(height: .5),
-        for (final ChapterDisplay mode in ChapterDisplay.values)
-          RadioListTile<ChapterDisplay>(
-            title: Text(mode.toLocale(context)),
-            value: mode,
-            groupValue: display,
-            onChanged: (value) => ref
-                .read(mangaChapterDisplayModeProvider.notifier)
-                .update(value),
-          ),
-      ],
+    return RadioGroup<ChapterDisplay>(
+      groupValue: display,
+      onChanged: (value) =>
+          ref.read(mangaChapterDisplayModeProvider.notifier).update(value),
+      child: ListView(
+        children: [
+          const Divider(height: .5),
+          for (final ChapterDisplay mode in ChapterDisplay.values)
+            RadioListTile<ChapterDisplay>(
+              title: Text(mode.toLocale(context)),
+              value: mode,
+            ),
+        ],
+      ),
     );
   }
 }

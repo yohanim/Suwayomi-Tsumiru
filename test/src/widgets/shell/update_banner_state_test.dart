@@ -21,7 +21,7 @@ ProviderContainer _container({bool runningNow = false}) {
   // Riverpod 3 pauses/disposes unlistened providers, so a one-shot .future
   // read leaves the socket provider mid-loading at teardown ("disposed during
   // loading state"). A persistent listener keeps it alive and settled.
-  container.listen(updateRunningSocketProvider, (_, __) {});
+  container.listen(updateRunningSocketProvider, (_, _) {});
   addTearDown(container.dispose);
   return container;
 }

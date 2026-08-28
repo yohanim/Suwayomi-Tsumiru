@@ -46,7 +46,7 @@ class RecommendsBrowseScreen extends ConsumerWidget {
       appBar: AppBar(title: Text(title)),
       body: recs.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (_, __) => Emoticons(title: context.l10n.errorSomethingWentWrong),
+        error: (_, _) => Emoticons(title: context.l10n.errorSomethingWentWrong),
         data: (list) => list.isEmpty
             ? Emoticons(title: context.l10n.noResultFound)
             : GridView.builder(
@@ -78,7 +78,7 @@ class RecommendsBrowseScreen extends ConsumerWidget {
                                     r.coverUrl!,
                                     width: double.infinity,
                                     fit: BoxFit.cover,
-                                    errorBuilder: (_, __, ___) =>
+                                    errorBuilder: (_, _, _) =>
                                         const ColoredBox(color: Colors.black26),
                                   )
                                 : const ColoredBox(color: Colors.black26),

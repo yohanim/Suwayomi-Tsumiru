@@ -43,7 +43,7 @@ class _MultiEventLink extends Link {
 
 Response _ok() => Response(data: {'ok': true}, response: {});
 
-Response _401() => Response(
+Response _unauthorized() => Response(
       data: null,
       errors: [
         const GraphQLError(message: 'Unauthorized', extensions: {
@@ -81,7 +81,7 @@ void main() {
         ' the retry uses FRESH, not STALE — R2-9)', () async {
       int refreshCalls = 0;
       final recorder = _RecorderLink([
-        (_) => _401(), // first call: 401
+        (_) => _unauthorized(), // first call: 401
         (_) => _ok(), // second call (after refresh): ok
       ]);
       final link = SuwayomiAuthLink(
@@ -124,8 +124,8 @@ void main() {
         () async {
       bool reauthCalled = false;
       final recorder = _RecorderLink([
-        (_) => _401(), // first call
-        (_) => _401(), // retry with FRESH token also 401
+        (_) => _unauthorized(), // first call
+        (_) => _unauthorized(), // retry with FRESH token also 401
       ]);
       final link = SuwayomiAuthLink(
         authType: () => AuthType.uiLogin,
@@ -150,7 +150,7 @@ void main() {
     test('transientFailure surfaces original 401 without setting reauth',
         () async {
       bool reauthCalled = false;
-      final recorder = _RecorderLink([(_) => _401()]);
+      final recorder = _RecorderLink([(_) => _unauthorized()]);
       final link = SuwayomiAuthLink(
         authType: () => AuthType.uiLogin,
         getHeaders: () async => {'Authorization': 'Bearer STALE'},
@@ -199,7 +199,7 @@ void main() {
     test('on 401 with auth-failure refresh, calls onNeedsReauth and '
         'returns the 401', () async {
       bool reauthCalled = false;
-      final recorder = _RecorderLink([(_) => _401()]);
+      final recorder = _RecorderLink([(_) => _unauthorized()]);
       final link = SuwayomiAuthLink(
         authType: () => AuthType.uiLogin,
         getHeaders: () async => {'Authorization': 'Bearer STALE'},
@@ -225,7 +225,7 @@ void main() {
     test('R2-3: Link delegates refresh; one 401 → exactly one refresh call',
         () async {
       int refreshCalls = 0;
-      final recorder = _RecorderLink([(_) => _401(), (_) => _ok()]);
+      final recorder = _RecorderLink([(_) => _unauthorized(), (_) => _ok()]);
       final link = SuwayomiAuthLink(
         authType: () => AuthType.uiLogin,
         getHeaders: () async => {'Authorization': 'Bearer STALE'},
@@ -264,7 +264,7 @@ void main() {
 
     test('on 401, calls onNeedsReauth (no refresh path)', () async {
       bool reauthCalled = false;
-      final recorder = _RecorderLink([(_) => _401()]);
+      final recorder = _RecorderLink([(_) => _unauthorized()]);
       final link = SuwayomiAuthLink(
         authType: () => AuthType.simpleLogin,
         getHeaders: () async => {'Cookie': 'JSESSIONID=stale'},

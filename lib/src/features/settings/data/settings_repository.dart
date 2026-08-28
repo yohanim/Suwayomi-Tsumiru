@@ -1,5 +1,4 @@
 import 'package:graphql/client.dart';
-import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../../../global_providers/global_providers.dart';

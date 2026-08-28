@@ -42,8 +42,6 @@ Fragment$MangaDto _manga({
   int unreadCount = 0,
   int downloadCount = 0,
   int bookmarkCount = 0,
-  bool started = false,
-  String status = 'ONGOING',
   List<String> genre = const [],
 }) =>
     Fragment$MangaDto(

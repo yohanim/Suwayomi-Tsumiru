@@ -41,7 +41,7 @@ void main() {
     _source.completer = Completer<int>();
     final container = ProviderContainer();
     addTearDown(container.dispose);
-    final sub = container.listen(_derived, (_, __) {});
+    final sub = container.listen(_derived, (_, _) {});
 
     // Initial load resolves to 1.
     _source.completer.complete(1);

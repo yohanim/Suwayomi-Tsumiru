@@ -32,7 +32,7 @@ class SearchStackScreen extends ConsumerWidget {
     void hide() => ref.read(quickOpenVisibleProvider.notifier).state = false;
     return Stack(
       children: [
-        if (child != null) child!,
+        ?child,
         if (visible)
           GestureDetector(
             onTap: hide,

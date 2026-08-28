@@ -13,13 +13,13 @@ import '../../../global_providers/global_providers.dart';
 import '../../../utils/extensions/custom_extensions.dart';
 import '../../auth/data/auth_credentials_store.dart';
 import '../../offline/data/background/background_token_record.dart';
+import '../../offline/data/background/catchup_work_spec.dart';
 import '../../settings/presentation/server/widget/client/server_port_tile/server_port_tile.dart';
 import '../../settings/presentation/server/widget/client/server_url_tile/server_url_tile.dart';
 import '../../settings/presentation/server/widget/credential_popup/credentials_popup.dart';
 import '../data/background/notification_background_client.dart';
 import '../data/background/notification_background_entry.dart';
 import '../data/local_notification_service.dart';
-import '../../offline/data/background/catchup_work_spec.dart';
 import '../data/notification_state_store.dart';
 import 'notification_settings_providers.dart';
 

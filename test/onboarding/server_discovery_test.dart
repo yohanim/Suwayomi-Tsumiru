@@ -37,7 +37,7 @@ void main() {
     test('nothing responds → null', () async {
       final found = await discoverServerOnLan(
         wifiIp: () async => '192.168.1.50',
-        ping: (_, __) async => false,
+        ping: (_, _) async => false,
       );
       expect(found, isNull);
     });

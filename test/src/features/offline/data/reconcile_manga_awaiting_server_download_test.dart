@@ -132,7 +132,7 @@ void main() {
           ),
         ],
         child: Consumer(
-          builder: (_, ref, __) {
+          builder: (_, ref, _) {
             captured = ref;
             return const SizedBox();
           },

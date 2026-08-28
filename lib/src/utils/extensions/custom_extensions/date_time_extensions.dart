@@ -255,7 +255,7 @@ extension TimeOfDayE on TimeOfDay {
     return value.toString();
   }
 
-  get hhmm {
+  String get hhmm {
     return "${_addLeadingZeroIfNeeded(hour)}:${_addLeadingZeroIfNeeded(minute)}";
   }
 }

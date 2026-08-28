@@ -24,9 +24,9 @@ import '../features/library/presentation/duplicates/library_duplicates_screen.da
 import '../features/library/presentation/library/library_screen.dart';
 import '../features/manga_book/presentation/downloads/downloads_screen.dart';
 import '../features/manga_book/presentation/manga_details/manga_details_screen.dart';
+import '../features/manga_book/presentation/reader/reader_screen.dart';
 import '../features/manga_book/presentation/recommends/recommends_browse_screen.dart';
 import '../features/manga_book/presentation/recommends/recommends_screen.dart';
-import '../features/manga_book/presentation/reader/reader_screen.dart';
 import '../features/manga_book/presentation/upcoming/upcoming_screen.dart';
 import '../features/manga_book/presentation/updates/updates_screen.dart';
 import '../features/manga_book/widgets/update_status_summary_sheet.dart';
@@ -36,7 +36,6 @@ import '../features/migration/presentation/screens/migration_bulk_run_screen.dar
 import '../features/migration/presentation/screens/migration_global_search_screen.dart';
 import '../features/migration/presentation/screens/migration_source_picker_screen.dart';
 import '../features/offline/presentation/offline_settings_screen.dart';
-import '../features/settings/presentation/notifications/notifications_settings_screen.dart';
 import '../features/onboarding/data/onboarding_complete.dart';
 import '../features/onboarding/presentation/onboarding_screen.dart';
 import '../features/quick_open/presentation/search_stack/search_stack_screen.dart';
@@ -48,6 +47,7 @@ import '../features/settings/presentation/downloads/downloads_settings_screen.da
 import '../features/settings/presentation/general/general_screen.dart';
 import '../features/settings/presentation/library/library_settings_screen.dart';
 import '../features/settings/presentation/more/more_screen.dart';
+import '../features/settings/presentation/notifications/notifications_settings_screen.dart';
 import '../features/settings/presentation/reader/reader_settings_screen.dart';
 import '../features/settings/presentation/reader/widgets/reader_general_prefs/reader_general_prefs.dart';
 import '../features/settings/presentation/server/server_screen.dart';

@@ -46,7 +46,7 @@ void main() {
               onChange: sizes.add,
               child: ValueListenableBuilder<double>(
                 valueListenable: height,
-                builder: (_, h, __) => SizedBox(height: h, width: 400),
+                builder: (_, h, _) => SizedBox(height: h, width: 400),
               ),
             ),
           ],

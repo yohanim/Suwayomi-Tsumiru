@@ -5,7 +5,6 @@
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import 'package:graphql/client.dart';
-import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../../../../global_providers/global_providers.dart';
@@ -73,7 +72,7 @@ class MangaBookRepository {
           variables: Variables$Mutation$UpdateChapters(input: batch),
         ),
       )
-      .getData((data) => null);
+      .getData((data) {});
 
   Future<void> deleteChapters(List<int> chapterIds) => client
       .mutate$DeleteDownloadedChapters(
@@ -85,7 +84,7 @@ class MangaBookRepository {
       )
       // Surface failure as a throw so callers don't cascade a device delete
       // when the server delete didn't actually happen.
-      .getData((data) => null);
+      .getData((data) {});
 
   // Mangas
   Future<MangaDto?> getManga({
@@ -121,7 +120,7 @@ class MangaBookRepository {
           ),
         ),
       )
-      .getData((data) => null);
+      .getData((data) {});
 
   Future<void> removeMangaFromCategory(int mangaId, int categoryId) => client
       .mutate$UpdateMangaCategories(
@@ -136,7 +135,7 @@ class MangaBookRepository {
           ),
         ),
       )
-      .getData((data) => null);
+      .getData((data) {});
 
   /// Bulk category edit across many series in one request: add [addTo] and
   /// remove [removeFrom] on every id in [mangaIds]. Empty lists are no-ops.
@@ -159,7 +158,7 @@ class MangaBookRepository {
               ),
             ),
           )
-          .getData((data) => null);
+          .getData((data) {});
 
   // Chapters
 
@@ -206,7 +205,7 @@ class MangaBookRepository {
           // Surface a failed mutation as a throw (like every other call here),
           // so offline callers detect the failure and keep the change pending
           // instead of clearing the dirty flag on a push that never landed.
-          .getData((data) => null);
+          .getData((data) {});
 
   Future<void> patchMangaMeta({
     required int mangaId,
@@ -227,7 +226,7 @@ class MangaBookRepository {
               ),
             ),
           )
-          .getData((data) => null);
+          .getData((data) {});
 
   /// Removes a per-series meta override so the app-wide default applies again.
   Future<void> deleteMangaMeta({

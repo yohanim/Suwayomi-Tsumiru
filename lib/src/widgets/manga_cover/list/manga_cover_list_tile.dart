@@ -104,7 +104,7 @@ class MangaCoverListTile extends StatelessWidget {
                   size: 28,
                 ),
               ),
-            if (trailing != null) trailing!,
+            ?trailing,
           ],
         ),
       ),

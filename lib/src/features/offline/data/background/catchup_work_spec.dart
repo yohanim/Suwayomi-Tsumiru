@@ -68,8 +68,7 @@ class CatchupMangaSpec {
     },
     chapterGenerations: {
       for (final e in (j['gens'] as Map? ?? const {}).entries)
-        if (int.tryParse('${e.key}') case final id?)
-          id: (e.value as num).toInt(),
+        ?int.tryParse('${e.key}'): (e.value as num).toInt(),
     },
   );
 }

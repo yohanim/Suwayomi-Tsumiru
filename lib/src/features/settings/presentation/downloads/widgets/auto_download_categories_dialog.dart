@@ -58,7 +58,7 @@ class AutoDownloadCategoriesDialog extends ConsumerWidget {
         content: SizedBox(
             height: 80, child: Center(child: CircularProgressIndicator())),
       ),
-      error: (_, __) => AlertDialog(
+      error: (_, _) => AlertDialog(
         title: Text(context.l10n.autoDownloadCategories),
         content: Text(context.l10n.errorSomethingWentWrong),
         actions: const [PopButton()],

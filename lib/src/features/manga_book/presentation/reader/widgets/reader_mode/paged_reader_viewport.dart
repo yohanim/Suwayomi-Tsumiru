@@ -9,8 +9,8 @@ import 'dart:math' as math;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
-import 'package:flutter/scheduler.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 
 import '../../../../../../constants/enum.dart';
 import '../../../../../../utils/crash/diagnostics.dart';
@@ -576,7 +576,6 @@ class _PagedReaderViewportState extends State<PagedReaderViewport>
       // landing mid-turn must not seize it — that abandons the turn partway and
       // leaves the pager between two pages.
       if (_dragOwner == _DragOwner.pager || _dragOffset != 0) return;
-      final points = _pointers.values.toList();
       final zoom = _currentZoomOrNull;
       if (zoom == null) return;
       _capturePinchBaseline(zoom);
@@ -1124,7 +1123,6 @@ class _PagedReaderViewportState extends State<PagedReaderViewport>
     });
   }
 
-  @visibleForTesting
   void _debugStrand(double progress) {
     _motionGeneration++;
     _commitPending = false;

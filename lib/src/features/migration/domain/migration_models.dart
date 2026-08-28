@@ -6,7 +6,6 @@
 
 import 'package:freezed_annotation/freezed_annotation.dart';
 
-import '../../browse_center/domain/source/graphql/__generated__/fragment.graphql.dart';
 import '../../manga_book/domain/manga/graphql/__generated__/fragment.graphql.dart';
 
 part 'migration_models.freezed.dart';

@@ -4,7 +4,6 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-import 'package:flutter/material.dart';
 
 /// Where a wheel notch should land the reader, given [speed] as a multiple of
 /// what the platform would do on its own.

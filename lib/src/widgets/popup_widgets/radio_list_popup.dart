@@ -69,12 +69,6 @@ class RadioList<T> extends StatelessWidget {
       ),
       subtitle: getSubtitle != null ? (Text(getSubtitle!(option))) : null,
       value: option,
-      groupValue: value,
-      onChanged: (value) {
-        if (value != null) {
-          onChange(value);
-        }
-      },
     );
   }
 
@@ -83,10 +77,18 @@ class RadioList<T> extends StatelessWidget {
     return ConstrainedBox(
       constraints: BoxConstraints(maxHeight: context.height * .7),
       child: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children:
-              optionList.map((e) => getRadioListTile(context, e)).toList(),
+        child: RadioGroup<T>(
+          groupValue: value,
+          onChanged: (value) {
+            if (value != null) {
+              onChange(value);
+            }
+          },
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children:
+                optionList.map((e) => getRadioListTile(context, e)).toList(),
+          ),
         ),
       ),
     );

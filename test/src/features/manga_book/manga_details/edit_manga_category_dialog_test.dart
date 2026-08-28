@@ -85,7 +85,7 @@ void main() {
     ]);
     addTearDown(container.dispose);
     // Keep the library source alive so an invalidation actually rebuilds it.
-    container.listen(libraryMangaListProvider, (_, __) {}, fireImmediately: true);
+    container.listen(libraryMangaListProvider, (_, _) {}, fireImmediately: true);
 
     await tester.pumpWidget(_app(container));
     await tester.pumpAndSettle();
@@ -114,7 +114,7 @@ void main() {
       }),
     ]);
     addTearDown(container.dispose);
-    container.listen(libraryMangaListProvider, (_, __) {}, fireImmediately: true);
+    container.listen(libraryMangaListProvider, (_, _) {}, fireImmediately: true);
 
     await tester.pumpWidget(_app(container));
     await tester.pumpAndSettle();

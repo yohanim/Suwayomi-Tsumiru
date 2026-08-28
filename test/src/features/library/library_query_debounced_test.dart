@@ -14,7 +14,7 @@ void main() {
     test('mirrors the raw query at build time', () {
       final container = ProviderContainer();
       addTearDown(container.dispose);
-      container.listen(libraryQueryDebouncedProvider, (_, __) {});
+      container.listen(libraryQueryDebouncedProvider, (_, _) {});
 
       expect(container.read(libraryQueryDebouncedProvider), isNull);
     });
@@ -24,7 +24,7 @@ void main() {
       () {
         fakeAsync((async) {
           final container = ProviderContainer();
-          container.listen(libraryQueryDebouncedProvider, (_, __) {});
+          container.listen(libraryQueryDebouncedProvider, (_, _) {});
           final notifier = container.read(libraryQueryProvider.notifier);
 
           notifier.update('o');
@@ -50,7 +50,7 @@ void main() {
     test('a later keystroke restarts the debounce window', () {
       fakeAsync((async) {
         final container = ProviderContainer();
-        container.listen(libraryQueryDebouncedProvider, (_, __) {});
+        container.listen(libraryQueryDebouncedProvider, (_, _) {});
         final notifier = container.read(libraryQueryProvider.notifier);
 
         notifier.update('re');
@@ -72,7 +72,7 @@ void main() {
     test('clearing the query (null) still propagates after the delay', () {
       fakeAsync((async) {
         final container = ProviderContainer();
-        container.listen(libraryQueryDebouncedProvider, (_, __) {});
+        container.listen(libraryQueryDebouncedProvider, (_, _) {});
         final notifier = container.read(libraryQueryProvider.notifier);
 
         notifier.update('abc');

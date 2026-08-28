@@ -15,29 +15,29 @@ import 'package:hooks_riverpod/misc.dart';
 import '../../../../constants/db_keys.dart';
 import '../../../../constants/enum.dart';
 import '../../../../utils/extensions/custom_extensions.dart';
+import '../../../../utils/platform/platform_runtime.dart';
+import 'widgets/long_strip_width_limit_slider/long_strip_width_limit_slider.dart';
 import 'widgets/reader_feedback_toasts_tile/reader_feedback_toasts_tile.dart';
 import 'widgets/reader_force_horizontal_seekbar_tile/reader_force_horizontal_seekbar_tile.dart';
-import '../../../../utils/platform/platform_runtime.dart';
 import 'widgets/reader_general_prefs/reader_general_prefs.dart';
-import 'widgets/reader_mouse_scroll_speed_slider/reader_mouse_scroll_speed_slider.dart';
 import 'widgets/reader_ignore_safe_area_tile/reader_ignore_safe_area_tile.dart';
 import 'widgets/reader_initial_overlay_tile/reader_initial_overlay_tile.dart';
 import 'widgets/reader_keep_screen_on_tile/reader_keep_screen_on_tile.dart';
 import 'widgets/reader_last_page_swipe_tile/reader_last_page_swipe_tile.dart';
 import 'widgets/reader_left_handed_seekbar_tile/reader_left_handed_seekbar_tile.dart';
 import 'widgets/reader_mode_tile/reader_mode_tile.dart';
+import 'widgets/reader_mouse_scroll_speed_slider/reader_mouse_scroll_speed_slider.dart';
 import 'widgets/reader_navigation_layout_tile/reader_navigation_layout_tile.dart';
-import 'widgets/long_strip_width_limit_slider/long_strip_width_limit_slider.dart';
 import 'widgets/reader_padding_slider/reader_padding_slider.dart';
 import 'widgets/reader_paged_prefs/reader_paged_prefs.dart';
 import 'widgets/reader_pinch_to_zoom/reader_pinch_to_zoom.dart';
 import 'widgets/reader_scroll_animation_tile/reader_scroll_animation_tile.dart';
 import 'widgets/reader_swipe_toggle_tile/reader_swipe_chapter_toggle_tile.dart';
-import 'widgets/tap_zones_overlay/tap_zones_overlay.dart';
 import 'widgets/reader_volume_tap_invert_tile/reader_volume_tap_invert_tile.dart';
 import 'widgets/reader_volume_tap_tile/reader_volume_tap_tile.dart';
 import 'widgets/reader_webtoon_prefs/reader_webtoon_prefs.dart';
 import 'widgets/reader_zoom_toggles/reader_zoom_toggles.dart';
+import 'widgets/tap_zones_overlay/tap_zones_overlay.dart';
 
 /// Global reader defaults. A few of these settings
 /// can be overridden per-manga from the in-reader sheet's "For this series"

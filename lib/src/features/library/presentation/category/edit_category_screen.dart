@@ -65,8 +65,7 @@ class EditCategoryScreen extends HookConsumerWidget {
                     category: category,
                   );
                 },
-                onReorder: (oldIndex, newIndex) {
-                  if (newIndex > oldIndex) newIndex -= 1;
+                onReorderItem: (oldIndex, newIndex) {
                   // The pinned "Default" category sits at order 0: it can't be
                   // moved, and nothing else may take slot 0.
                   if (oldIndex == 0) return;

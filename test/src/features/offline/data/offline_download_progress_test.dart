@@ -28,7 +28,7 @@ void main() {
     var n = 0;
     final sub = container.listen(
       offlineDownloadProgressProvider,
-      (_, __) => n++,
+      (_, _) => n++,
     );
     body();
     sub.close();

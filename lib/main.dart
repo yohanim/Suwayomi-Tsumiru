@@ -28,14 +28,14 @@ import 'src/features/migration/controller/bulk_migration_providers.dart';
 import 'src/features/notifications/controller/notifications_controller.dart';
 import 'src/features/notifications/data/background/notification_background_entry.dart';
 import 'src/features/offline/data/background/background_download_controller_shim.dart';
-import 'src/features/offline/data/server_reachability.dart';
+import 'src/features/offline/data/background/catchup_spec_writer.dart';
 import 'src/features/offline/data/offline_background_downloads.dart';
 import 'src/features/offline/data/offline_bootstrap.dart';
-import 'src/features/offline/data/background/catchup_spec_writer.dart';
 import 'src/features/offline/data/offline_chapter_catchup.dart';
 import 'src/features/offline/data/offline_download_providers.dart';
 import 'src/features/offline/data/offline_repository.dart';
 import 'src/features/offline/data/offline_server_identity_repository.dart';
+import 'src/features/offline/data/server_reachability.dart';
 import 'src/features/onboarding/data/onboarding_complete.dart';
 import 'src/features/settings/presentation/server/widget/client/server_port_tile/server_port_tile.dart';
 import 'src/features/settings/presentation/server/widget/client/server_url_tile/server_url_tile.dart';
@@ -52,8 +52,8 @@ import 'src/utils/desktop/desktop_window.dart';
 import 'src/utils/hive/graphql_cache_guard.dart';
 import 'src/utils/misc/toast/toast.dart';
 import 'src/utils/network/graphql_errors.dart';
-import 'src/utils/soft_clear_image_cache.dart';
 import 'src/utils/platform/is_android_native.dart';
+import 'src/utils/soft_clear_image_cache.dart';
 import 'src/widgets/app_error_app.dart';
 
 /// Absolute path of the crash-log file (native only; null on web / if setup

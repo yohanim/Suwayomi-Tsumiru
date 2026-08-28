@@ -7,7 +7,6 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import '../../../../../settings/presentation/reader/widgets/reader_mouse_scroll_speed_slider/reader_mouse_scroll_speed_slider.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
@@ -20,6 +19,7 @@ import '../../../../../offline/data/offline_download_providers.dart';
 import '../../../../../offline/data/offline_repository.dart';
 import '../../../../../settings/presentation/incognito/incognito_mode.dart';
 import '../../../../../settings/presentation/reader/widgets/reader_feedback_toasts_tile/reader_feedback_toasts_tile.dart';
+import '../../../../../settings/presentation/reader/widgets/reader_mouse_scroll_speed_slider/reader_mouse_scroll_speed_slider.dart';
 import '../../../../../settings/presentation/reader/widgets/reader_webtoon_prefs/reader_webtoon_prefs.dart';
 import '../../../../../tracking/domain/track_progress_gate.dart';
 import '../../../../data/manga_book/manga_book_repository.dart';
@@ -383,7 +383,7 @@ class MultiChapterPagedReaderMode extends HookConsumerWidget {
       // for the neighbour, so an unheld read gets disposed mid-fetch under
       // Riverpod 3. Closed in finally so retries can't leak subscriptions.
       final sub = ref.listenManual(
-          chapterPagesProvider(chapterId: next.id), (_, __) {});
+          chapterPagesProvider(chapterId: next.id), (_, _) {});
       try {
         deferFeedback(() => InfinityContinuousFeedback
             .showLoadingNextChapterFeedback(context, next.name));
@@ -430,7 +430,7 @@ class MultiChapterPagedReaderMode extends HookConsumerWidget {
       loadingPrevious.value = true;
       // Same held-subscription + finally-close treatment as loadNextChapter.
       final sub = ref.listenManual(
-          chapterPagesProvider(chapterId: prev.id), (_, __) {});
+          chapterPagesProvider(chapterId: prev.id), (_, _) {});
       try {
         deferFeedback(() => InfinityContinuousFeedback
             .showLoadingPreviousChapterFeedback(context, prev.name));

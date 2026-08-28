@@ -52,8 +52,8 @@ void main() {
       () async {
     final c = await _container();
     // Keep providers alive across updates (real watchers would in the app).
-    c.listen(serverUrlProvider, (_, __) {}, fireImmediately: true);
-    c.listen(credentialsProvider, (_, __) {}, fireImmediately: true);
+    c.listen(serverUrlProvider, (_, _) {}, fireImmediately: true);
+    c.listen(credentialsProvider, (_, _) {}, fireImmediately: true);
     final store = c.read(authCredentialsStoreProvider.notifier);
     final serverUrl = c.read(serverUrlProvider.notifier);
 
@@ -82,7 +82,7 @@ void main() {
 
   test('changing the server port clears credentials too', () async {
     final c = await _container();
-    c.listen(serverPortProvider, (_, __) {}, fireImmediately: true);
+    c.listen(serverPortProvider, (_, _) {}, fireImmediately: true);
     final store = c.read(authCredentialsStoreProvider.notifier);
     final port = c.read(serverPortProvider.notifier);
 
@@ -110,7 +110,7 @@ void main() {
   test('different port counts as a different host', () async {
     final c = await _container();
     // Keep serverUrlProvider alive across updates (a real watcher would in the app).
-    c.listen(serverUrlProvider, (_, __) {}, fireImmediately: true);
+    c.listen(serverUrlProvider, (_, _) {}, fireImmediately: true);
     final store = c.read(authCredentialsStoreProvider.notifier);
     final serverUrl = c.read(serverUrlProvider.notifier);
 

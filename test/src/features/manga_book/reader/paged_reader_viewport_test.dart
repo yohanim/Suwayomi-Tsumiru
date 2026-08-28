@@ -119,7 +119,7 @@ Future<void> _pumpViewport(
         rotateWideInvert: false,
         reversePair: false,
         cropBorders: false,
-        onPageWide: onPageWide ?? (_, __, ___) {},
+        onPageWide: onPageWide ?? (_, _, _) {},
         onChapterPageChanged: (_, raw) => onRawPageChanged(raw),
         transitionBuilder: (transition) => transition.isStart
             ? (previousBoundary ?? const SizedBox.shrink())

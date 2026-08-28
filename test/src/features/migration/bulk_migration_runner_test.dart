@@ -145,7 +145,7 @@ void main() {
         fromMangaId: 1,
         toMangaId: 2,
         state: MigrationPairState.copied,
-        options: const MigrationOption(deleteSource: true),
+        options: MigrationOption(deleteSource: true),
         copiedSourceRecordIds: [700],
       ));
       final reloaded =
@@ -266,7 +266,7 @@ void main() {
         fromMangaId: 1,
         toMangaId: 100,
         state: MigrationPairState.copied,
-        options: const MigrationOption(deleteSource: true),
+        options: MigrationOption(deleteSource: true),
         copiedSourceRecordIds: [700],
       ));
       final repo = FakeMigrationRepository();
@@ -283,7 +283,7 @@ void main() {
         fromMangaId: 1,
         toMangaId: 100,
         state: MigrationPairState.copying,
-        options: const MigrationOption(deleteSource: true),
+        options: MigrationOption(deleteSource: true),
       ));
       final repo = FakeMigrationRepository();
       final runner =
@@ -299,7 +299,7 @@ void main() {
         fromMangaId: 1,
         toMangaId: 100,
         state: MigrationPairState.failed,
-        options: const MigrationOption(deleteSource: true),
+        options: MigrationOption(deleteSource: true),
       ));
       final repo = FakeMigrationRepository();
       final runner =

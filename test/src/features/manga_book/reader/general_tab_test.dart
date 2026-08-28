@@ -231,7 +231,7 @@ void main() {
           child: MaterialApp(
             home: ValueListenableBuilder<int>(
               valueListenable: index,
-              builder: (_, i, __) => ReaderFlashOverlay(currentIndex: i),
+              builder: (_, i, _) => ReaderFlashOverlay(currentIndex: i),
             ),
           ),
         ),

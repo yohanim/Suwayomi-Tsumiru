@@ -238,7 +238,7 @@ class _TrackerCard extends ConsumerWidget {
                   tracker.icon,
                   width: 24,
                   height: 24,
-                  errorBuilder: (_, __, ___) =>
+                  errorBuilder: (_, _, _) =>
                       const Icon(Icons.sync_rounded, size: 24),
                 ),
                 const SizedBox(width: 8),
@@ -322,7 +322,7 @@ class _LoggedOutBoundCard extends StatelessWidget {
                   tracker.icon,
                   width: 24,
                   height: 24,
-                  errorBuilder: (_, __, ___) =>
+                  errorBuilder: (_, _, _) =>
                       const Icon(Icons.sync_rounded, size: 24),
                 ),
                 const SizedBox(width: 8),

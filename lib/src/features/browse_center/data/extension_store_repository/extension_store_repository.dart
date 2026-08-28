@@ -30,7 +30,7 @@ class ExtensionStoreRepository {
           variables: Variables$Mutation$AddExtensionStore(indexUrl: indexUrl),
         ),
       )
-      .getData((data) => null);
+      .getData((data) {});
 
   Future<void> removeStore(String indexUrl) => client
       .mutate$RemoveExtensionStore(
@@ -40,7 +40,7 @@ class ExtensionStoreRepository {
           ),
         ),
       )
-      .getData((data) => null);
+      .getData((data) {});
 }
 
 @riverpod

@@ -63,7 +63,6 @@ Future<ProviderContainer> _container({
   bool showAll = false,
   bool offline = false,
   bool? unreadFilter,
-  int? keepChapterId,
 }) async {
   SharedPreferences.setMockInitialValues({});
   final prefs = await SharedPreferences.getInstance();

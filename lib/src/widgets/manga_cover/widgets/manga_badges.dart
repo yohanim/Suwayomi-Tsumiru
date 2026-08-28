@@ -522,7 +522,7 @@ class _SourceIcon extends StatelessWidget {
             // Extension icons are not all square. `cover` (ServerImage's
             // default) crops them to the cell; `contain` fits the whole glyph.
             fit: BoxFit.contain,
-            progressIndicatorBuilder: (_, __, ___) => Center(
+            progressIndicatorBuilder: (_, _, _) => Center(
               child: Icon(Icons.extension_rounded, size: size * .8),
             ),
           ),

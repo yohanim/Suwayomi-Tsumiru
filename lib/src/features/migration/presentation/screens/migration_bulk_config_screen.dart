@@ -127,9 +127,8 @@ class MigrationBulkConfigScreen extends HookConsumerWidget {
                     shrinkWrap: true,
                     physics: const NeverScrollableScrollPhysics(),
                     buildDefaultDragHandles: false,
-                    onReorder: (oldIndex, newIndex) {
+                    onReorderItem: (oldIndex, newIndex) {
                       final list = [...selectedIds.value];
-                      if (newIndex > oldIndex) newIndex -= 1;
                       list.insert(newIndex, list.removeAt(oldIndex));
                       selectedIds.value = list;
                     },

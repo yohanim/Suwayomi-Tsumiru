@@ -6,7 +6,6 @@
 
 import 'dart:async';
 
-import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../../../../../features/offline/data/offline_cover_warmer.dart';
@@ -33,8 +32,6 @@ Future<List<MangaDto>?> libraryMangaList(Ref ref) async {
   // they already carry the unread correction (double-applied if written
   // back), and the DTO round-trip loses lastReadAt and real chapter numbers.
   var fromServer = false;
-  // Kept for the reachability flip below; fromServer is the mirror gate.
-  var serverReachable = true;
   final list = await libraryWithOfflineFallback(
     fetch: () async {
       final r = await categoryRepository.getAllLibraryMangas();
@@ -51,7 +48,6 @@ Future<List<MangaDto>?> libraryMangaList(Ref ref) async {
     // so defer the flip to a later tick (past the build) and ignore it if the
     // container is already gone.
     onReachability: (reachable) {
-      serverReachable = reachable;
       Future(() {
         try {
           reachability.set(!reachable);

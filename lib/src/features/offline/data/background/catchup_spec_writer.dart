@@ -4,7 +4,6 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../../../../constants/db_keys.dart';
@@ -43,8 +42,9 @@ Future<void> writeCatchupWorkSpec(CatchupRead read) async {
     for (final m in await db.libraryManga()) {
       final all = await db.chaptersForManga(m.id);
       for (final c in all) {
-        if (c.deviceState == OfflineDeviceState.downloaded)
+        if (c.deviceState == OfflineDeviceState.downloaded) {
           usedBytes += c.bytes;
+        }
       }
       if (m.keepRule == OfflineKeepRule.off) continue;
       final chapters = all;

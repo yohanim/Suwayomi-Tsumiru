@@ -213,7 +213,7 @@ class _TrackSearchResultTile extends StatelessWidget {
                 width: 56,
                 height: 80,
                 fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => Container(
+                errorBuilder: (_, _, _) => Container(
                   width: 56,
                   height: 80,
                   color: context.theme.colorScheme.surfaceContainerHighest,

@@ -10,8 +10,8 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import '../../../../../constants/app_sizes.dart';
 import '../../../../../routes/router_config.dart';
 import '../../../../../utils/extensions/custom_extensions.dart';
-import '../../../../settings/presentation/appearance/widgets/show_recommendations/show_recommendations_tile.dart';
 import '../../../../offline/data/server_reachability.dart';
+import '../../../../settings/presentation/appearance/widgets/show_recommendations/show_recommendations_tile.dart';
 import '../../../data/recommendations/recommendation_repository.dart';
 import '../../recommends/recommendation_card.dart';
 
@@ -72,12 +72,12 @@ class RecommendsRow extends ConsumerWidget {
           child: recs.when(
             loading: () => const Center(child: CircularProgressIndicator()),
             // Unreachable: an error hides the section above.
-            error: (_, __) => const SizedBox.shrink(),
+            error: (_, _) => const SizedBox.shrink(),
             data: (list) => ListView.separated(
               scrollDirection: Axis.horizontal,
               padding: const EdgeInsets.symmetric(horizontal: 8),
               itemCount: list.length,
-              separatorBuilder: (_, __) => const SizedBox(width: 4),
+              separatorBuilder: (_, _) => const SizedBox(width: 4),
               itemBuilder: (context, i) => RecommendationCard(rec: list[i]),
             ),
           ),

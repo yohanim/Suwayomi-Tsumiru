@@ -26,7 +26,7 @@ class SettingsTrackerTile extends ConsumerWidget {
         tracker.icon,
         width: 40,
         height: 40,
-        errorBuilder: (_, __, ___) => const Icon(Icons.sync_rounded),
+        errorBuilder: (_, _, _) => const Icon(Icons.sync_rounded),
       ),
       title: Text(tracker.name),
       subtitle: tracker.isLoggedIn && tracker.isTokenExpired

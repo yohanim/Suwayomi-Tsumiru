@@ -44,7 +44,7 @@ extension IntExtensions on int? {
         .convertToDaysAgo(context);
   }
 
-  String toDaysAgo(context) {
+  String toDaysAgo(BuildContext context) {
     if (isNull) return "";
     return DateTime.fromMillisecondsSinceEpoch(this!).convertToDaysAgo(context);
   }

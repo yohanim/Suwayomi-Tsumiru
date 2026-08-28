@@ -10,7 +10,6 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 import '../../../../../../constants/app_constants.dart';
 import '../../../../../../constants/enum.dart';
-import '../../../../../settings/presentation/reader/widgets/reader_navigation_layout_tile/reader_navigation_layout_tile.dart';
 import '../../../../../settings/presentation/reader/widgets/reader_paged_prefs/reader_paged_prefs.dart';
 import '../../../../../settings/presentation/reader/widgets/reader_tap_invert/reader_tap_invert.dart';
 import 'layouts/edge_layout.dart';

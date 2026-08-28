@@ -212,7 +212,7 @@ void main() {
     );
   });
 
-  Future<_RecordingRepo> _pumpSingleChapter(WidgetTester tester) async {
+  Future<_RecordingRepo> pumpSingleChapter(WidgetTester tester) async {
     tester.view.physicalSize = const Size(800, 1600);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.reset);
@@ -250,7 +250,7 @@ void main() {
   }
 
   testWidgets('saves the visible page after the debounce', (tester) async {
-    final repo = await _pumpSingleChapter(tester);
+    final repo = await pumpSingleChapter(tester);
 
     // Turn to page 2 (index 1).
     await tester.timedDrag(find.byType(PagedReaderViewport),
@@ -272,7 +272,7 @@ void main() {
 
   testWidgets('flushes the visible page on exit before the debounce fires',
       (tester) async {
-    final repo = await _pumpSingleChapter(tester);
+    final repo = await pumpSingleChapter(tester);
 
     await tester.timedDrag(find.byType(PagedReaderViewport),
         const Offset(-400, 0), const Duration(milliseconds: 80));

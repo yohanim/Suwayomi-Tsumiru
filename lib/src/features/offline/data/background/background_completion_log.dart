@@ -10,7 +10,6 @@ import 'dart:io';
 import '../chapter_commit.dart';
 import '../offline_database.dart';
 import '../offline_page_store.dart';
-import '../offline_types.dart';
 
 sealed class LogEntry {
   const LogEntry();

@@ -16,7 +16,6 @@ import '../offline_database.dart';
 import '../offline_page_store.dart';
 import '../offline_page_store_io.dart';
 import '../offline_paths.dart';
-import '../offline_types.dart';
 import '../reconcile_logic.dart';
 import 'background_chapter_fetch.dart';
 import 'background_completion_log.dart';
@@ -426,8 +425,9 @@ Future<Set<int>> _loggedOrCommitted(
 ) async {
   final present = <int>{};
   for (final e in logEntries) {
-    if (e is AdoptChapterEntry && e.mangaId == mangaId)
+    if (e is AdoptChapterEntry && e.mangaId == mangaId) {
       present.add(e.chapterId);
+    }
     if (e is ChapterEntry && e.status == 'downloaded') present.add(e.chapterId);
   }
   for (final chapterId in candidates) {
@@ -613,7 +613,7 @@ Future<ChapterAttempt> _downloadOneChapter({
         if (!staged.contains(i)) (index: i, url: urls[i]),
     ],
     isCancelled: () => false,
-    onPageStored: (_, __, ___) async {},
+    onPageStored: (_, _, _) async {},
   );
   if (!outcome.succeeded) {
     return (bytes: 0, transient: outcome.offline || outcome.authFailed);

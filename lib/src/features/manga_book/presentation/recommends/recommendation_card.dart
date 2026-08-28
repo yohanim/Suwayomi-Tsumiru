@@ -40,7 +40,7 @@ class RecommendationCard extends StatelessWidget {
                     ? Image.network(
                         rec.coverUrl!,
                         fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) =>
+                        errorBuilder: (_, _, _) =>
                             const ColoredBox(color: Colors.black26),
                       )
                     : const ColoredBox(color: Colors.black26),

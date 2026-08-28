@@ -59,7 +59,7 @@ class UpdateCategoriesDialog extends ConsumerWidget {
         content: SizedBox(
             height: 80, child: Center(child: CircularProgressIndicator())),
       ),
-      error: (_, __) => AlertDialog(
+      error: (_, _) => AlertDialog(
         title: Text(context.l10n.updateCategories),
         content: Text(context.l10n.errorSomethingWentWrong),
         actions: const [PopButton()],

@@ -55,9 +55,8 @@ class ScanlatorPreferenceDialog extends HookConsumerWidget {
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
                 buildDefaultDragHandles: true,
-                onReorder: (oldIndex, newIndex) {
+                onReorderItem: (oldIndex, newIndex) {
                   final list = [...ranked.value];
-                  if (newIndex > oldIndex) newIndex--;
                   list.insert(newIndex, list.removeAt(oldIndex));
                   ranked.value = list;
                 },

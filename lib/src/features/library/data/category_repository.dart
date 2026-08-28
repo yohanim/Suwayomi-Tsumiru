@@ -7,7 +7,6 @@
 import 'dart:async';
 
 import 'package:graphql/client.dart';
-import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../../../global_providers/global_providers.dart';
@@ -34,7 +33,7 @@ class CategoryRepository {
           variables: Variables$Mutation$CreateCategory(input: category),
         ),
       )
-      .getData((data) => null);
+      .getData((data) {});
 
   Future<void> editCategory({
     required int categoryId,
@@ -51,7 +50,7 @@ class CategoryRepository {
               ),
             ),
           )
-          .getData((data) => null);
+          .getData((data) {});
 
   Future<void> deleteCategory({
     required int categoryId,
@@ -64,7 +63,7 @@ class CategoryRepository {
               ),
             ),
           )
-          .getData((data) => null);
+          .getData((data) {});
 
   Future<void> reorderCategory({
     required int categoryId,
@@ -81,7 +80,7 @@ class CategoryRepository {
               ),
             ),
           )
-          .getData((data) => null);
+          .getData((data) {});
 
   Future<void> setCategoryMeta({
     required int categoryId,
@@ -102,7 +101,7 @@ class CategoryRepository {
               ),
             ),
           )
-          .getData((data) => null);
+          .getData((data) {});
 
   Future<void> deleteCategoryMeta({
     required int categoryId,
@@ -119,7 +118,7 @@ class CategoryRepository {
               ),
             ),
           )
-          .getData((data) => null);
+          .getData((data) {});
 
   //  Manga
   Future<List<MangaDto>?> getAllLibraryMangas() =>

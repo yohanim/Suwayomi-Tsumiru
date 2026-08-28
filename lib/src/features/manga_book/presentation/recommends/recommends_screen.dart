@@ -34,7 +34,7 @@ class RecommendsScreen extends ConsumerWidget {
       ),
       body: setup.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (_, __) => Emoticons(title: context.l10n.errorSomethingWentWrong),
+        error: (_, _) => Emoticons(title: context.l10n.errorSomethingWentWrong),
         data: (value) {
           final providers = value?.providers ?? const [];
           if (providers.isEmpty) {

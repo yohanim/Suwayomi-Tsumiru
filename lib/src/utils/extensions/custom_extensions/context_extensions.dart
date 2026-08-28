@@ -22,7 +22,7 @@ extension ContextExtensions on BuildContext {
   ///
   /// hides the keyboard if its already open
   ///
-  get hideKeyboard => FocusScope.of(this).unfocus();
+  void get hideKeyboard => FocusScope.of(this).unfocus();
 
   ///
   /// accepts a double [scale] and returns scaled sized based on the screen
@@ -192,7 +192,7 @@ extension ContextExtensions on BuildContext {
 
   AppLocalizations get l10n => AppLocalizations.of(this)!;
 
-  navPop<T>([T? result]) => Navigator.pop<T>(this, result);
+  void navPop<T>([T? result]) => Navigator.pop<T>(this, result);
 
   Locale get currentLocale => Localizations.localeOf(this);
 
