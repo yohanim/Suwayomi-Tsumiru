@@ -17,9 +17,12 @@ abstract class FilePickerUtils {
       allowedExtensions: extensions,
     );
     if (context != null && context.mounted) {
+      // Web has no file paths, so the bytes have to come back with the pick.
+      final bytes = kIsWeb && file != null ? await file.readAsBytes() : null;
+      if (!context.mounted) return file;
       if (file == null ||
           file.name.isBlank ||
-          (!kIsWeb && (file.path).isBlank)) {
+          (kIsWeb && bytes.isBlank || (!kIsWeb && (file.path).isBlank))) {
         throw context.l10n.errorFilePick;
       }
       if (extensions.isNotBlank &&
