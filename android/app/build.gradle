@@ -30,17 +30,13 @@ if (keystorePropertiesFile.exists()) {
 
 android {
     compileSdkVersion 36 // bumped for background_downloader / flutter_foreground_task
-    ndkVersion "27.0.12077973"
+    ndkVersion "28.2.13676358"
     namespace "io.github.aaronbamblett.tsumiru"
     compileOptions {
         // Required by flutter_local_notifications (uses java.time on older APIs).
         coreLibraryDesugaringEnabled true
         sourceCompatibility JavaVersion.VERSION_17
         targetCompatibility JavaVersion.VERSION_17
-    }
-
-    kotlinOptions {
-        jvmTarget = '17'
     }
 
     sourceSets {
@@ -81,6 +77,12 @@ android {
            signingConfig signingConfigs.release
        }
    }
+}
+
+kotlin {
+    compilerOptions {
+        jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17
+    }
 }
 
 flutter {
