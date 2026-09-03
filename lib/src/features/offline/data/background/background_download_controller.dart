@@ -181,7 +181,9 @@ class BackgroundDownloadController with WidgetsBindingObserver {
       if (_isPaused()) return;
       recordDiagnostic(
         '[${DateTime.now().toIso8601String()}] offline-fgs: '
-        'calling-startService reason=$reason pendingCount=${pending.length}\n',
+        'calling-startService reason=$reason '
+        'pendingCount=${pending.length} '
+        'chapterIds=${pending.map((c) => c.id).join(',')}\n',
       );
       final res = await FlutterForegroundTask.startService(
         serviceTypes: [ForegroundServiceTypes.dataSync],
