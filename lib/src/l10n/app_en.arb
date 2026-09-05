@@ -2790,6 +2790,19 @@
   "updateCompleted": "Update Completed",
   "updateFailed": "Failed to update {property}",
   "updates": "Updates",
+  "updatesGroupingLabel": "Chapter grouping",
+  "updatesGroupingHint": "Stack consecutive chapters from the same series into one foldable entry.",
+  "updatesGroupingModeDisabled": "Disabled",
+  "updatesGroupingModeCollapsed": "Collapsed",
+  "updatesGroupingModeExpanded": "Expanded",
+  "updatesGroupingShowMore": "+{count} more",
+  "@updatesGroupingShowMore": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "updatesSummary": "Updates Summary",
   "updating": "Updating",
   "updatingLibrary": "Updating library…",
