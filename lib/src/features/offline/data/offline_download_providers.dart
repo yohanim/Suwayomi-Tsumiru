@@ -695,14 +695,21 @@ Future<void> flushPendingReadDeletes(ProviderContainer container) async {
 // --- on-device (local) ------------------------------------------------------
 
 /// Delete THIS phone's copy when a chapter is manually marked read.
+///
+/// Takes a plain read function ([ReadFn]) rather than a [WidgetRef]: callers
+/// that fire this off after an earlier `await` (e.g. a bulk mark-read action
+/// whose widget may have unmounted by the time this runs) must pass a
+/// `ProviderContainer.read` tear-off instead of the widget's own `ref.read` —
+/// the widget's `ref` throws once its element is disposed, but a container
+/// obtained up front stays valid for as long as the app does.
 Future<void> maybeDeleteOnManualLocal(
-  WidgetRef ref, {
+  ReadFn read, {
   required int chapterId,
 }) async {
-  if (!ref.read(offlineActiveProvider)) return;
-  final s = ref.read(localDeleteSettingsProvider);
+  if (!read(offlineActiveProvider)) return;
+  final s = read(localDeleteSettingsProvider);
   if (!s.deleteManuallyMarkedRead) return;
-  await _deleteDeviceCopyIfDeletable(ref.read, chapterId, s.deleteWithBookmark);
+  await _deleteDeviceCopyIfDeletable(read, chapterId, s.deleteWithBookmark);
 }
 
 /// Delete a chapter's device copy iff it's downloaded and the bookmark gate
@@ -732,16 +739,19 @@ Future<void> _deleteDeviceCopyIfDeletable(
 /// read (per the WebUI's delete-while-reading). The cascade then drops the
 /// device copy too.
 /// Tell the SERVER to delete its copy when a chapter is manually marked read.
+///
+/// See [maybeDeleteOnManualLocal] for why this takes a plain read function
+/// instead of a [WidgetRef].
 Future<void> maybeDeleteOnManualServer(
-  WidgetRef ref, {
+  ReadFn read, {
   required int? mangaId,
   required int chapterId,
 }) async {
   if (mangaId == null) return;
-  final s = await _serverDeleteSettings(ref.read);
+  final s = await _serverDeleteSettings(read);
   if (s == null || !s.deleteManuallyMarkedRead) return;
   await _deleteServerCopyIfDeletable(
-    ref.read,
+    read,
     mangaId,
     chapterId,
     s.deleteWithBookmark,

@@ -78,6 +78,11 @@ class CategoryMangaList extends HookConsumerWidget {
       selection.value = const {};
       final repo = ref.read(mangaBookRepositoryProvider);
       final offlineDb = ref.read(offlineReadDatabaseProvider);
+      // Captured up front: the loop below awaits a network call per series, so
+      // this widget may unmount before a later iteration's fire-and-forget
+      // tracker push runs. A container obtained now stays valid regardless —
+      // unlike `ref.read`, which throws once this element is disposed.
+      final containerRead = ProviderScope.containerOf(context, listen: false).read;
       var allOk = true;
       for (final id in ids) {
         // Server first; offline, fall back to the catalog chapter rows
@@ -104,7 +109,7 @@ class CategoryMangaList extends HookConsumerWidget {
           if (read && ok) {
             unawaited(
               maybeTrackProgressOnReadFetch(
-                ref,
+                containerRead,
                 mangaId: id,
                 isRead: true,
                 manual: true,

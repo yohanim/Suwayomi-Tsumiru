@@ -118,7 +118,7 @@ class ReaderScreen extends HookConsumerWidget {
 
       if (isReadingCompleted && context.mounted) {
         unawaited(maybeTrackProgressOnReadFetch(
-          ref,
+          ref.read,
           mangaId: mangaId,
           isRead: true,
           manual: false,

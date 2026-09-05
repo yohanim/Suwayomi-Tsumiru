@@ -45,6 +45,12 @@ class MultiChaptersActionIcon extends ConsumerWidget {
     return IconButton(
       icon: icon ?? Icon(iconData),
       onPressed: () async {
+        // Captured up front, before any await: the mutations below can outlive
+        // this icon (the selection action bar this lives in closes on a
+        // successful mark-read, unmounting the widget while these fire-and-forget
+        // follow-ups are still pending). `ref.read` throws once that happens;
+        // a container obtained now stays valid regardless.
+        final containerRead = ProviderScope.containerOf(context, listen: false).read;
         final ids = [for (final c in chapters) c.id];
         // Read/unread expands to every scanlator duplicate; other patches
         // stay per-copy.
@@ -101,14 +107,14 @@ class MultiChaptersActionIcon extends ConsumerWidget {
           // still pending, or offline reads leave the copy stranded.
           for (final entry in expandedByManga.entries) {
             for (final id in entry.value) {
-              unawaited(maybeDeleteOnManualLocal(ref, chapterId: id));
+              unawaited(maybeDeleteOnManualLocal(containerRead, chapterId: id));
             }
           }
         }
         if (ok && change.isRead == true) {
           for (final mangaId in {for (final c in chapters) c.mangaId}) {
             unawaited(maybeTrackProgressOnReadFetch(
-              ref,
+              containerRead,
               mangaId: mangaId,
               isRead: true,
               manual: true,
@@ -117,7 +123,7 @@ class MultiChaptersActionIcon extends ConsumerWidget {
           // Expanded set: hidden duplicates get delete-on-manual-read too.
           for (final entry in expandedByManga.entries) {
             for (final id in entry.value) {
-              unawaited(maybeDeleteOnManualServer(ref,
+              unawaited(maybeDeleteOnManualServer(containerRead,
                   mangaId: entry.key, chapterId: id));
             }
           }

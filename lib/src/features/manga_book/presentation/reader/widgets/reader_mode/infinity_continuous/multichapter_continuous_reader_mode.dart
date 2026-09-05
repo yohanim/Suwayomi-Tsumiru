@@ -330,7 +330,7 @@ class MultiChapterContinuousReaderMode extends HookConsumerWidget {
         completedChapterIds.value = {...completedChapterIds.value, chapterId};
         unawaited(
           maybeTrackProgressOnReadFetch(
-            ref,
+            ref.read,
             mangaId: manga.id,
             isRead: true,
             manual: false,
@@ -1610,7 +1610,7 @@ void _markChapterRead(
       // Push progress to external trackers (fire-and-forget).
       unawaited(
         maybeTrackProgressOnReadFetch(
-          ref,
+          ref.read,
           mangaId: mangaId,
           isRead: true,
           manual: false,
