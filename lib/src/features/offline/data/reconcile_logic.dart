@@ -19,7 +19,17 @@ Set<int> desiredChapterIds(
     OfflineKeepRule.off => <int>{},
     OfflineKeepRule.all => {for (final c in chapters) c.id},
     OfflineKeepRule.allUnread => {for (final c in chapters) if (!c.isRead) c.id},
-    OfflineKeepRule.nUnread => (chapters.where((c) => !c.isRead).toList()
+    // Excludes chapters already given up on (OfflineDeviceState.error) from the
+    // candidate pool BEFORE cutting to `keepUnreadCount`. Without this, a
+    // chapter the source can never serve (e.g. removed/renumbered upstream)
+    // permanently occupies one of the N slots — the reconciler already skips
+    // re-downloading an errored chapter every pass (so it never gets retried),
+    // but nothing here ever let the (N+1)th unread chapter take its place, so
+    // the user's "keep N downloaded" setting silently plateaus at N-1 forever.
+    OfflineKeepRule.nUnread => (chapters
+              .where((c) =>
+                  !c.isRead && c.deviceState != OfflineDeviceState.error)
+              .toList()
           ..sort((a, b) => a.chapterIndex.compareTo(b.chapterIndex)))
         .take(keepUnreadCount)
         .map((c) => c.id)
