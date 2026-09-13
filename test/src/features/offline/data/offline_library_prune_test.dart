@@ -101,10 +101,26 @@ void main() {
     expect(await db.mangaById(2), isNotNull);
   });
 
-  test('an already-removed kept manga is not re-reported', () async {
+  // Applying a keep rule to a row a prune already stamped '0' (removed while
+  // its rule was off) is an explicit "keep this offline again" — it re-admits
+  // the row to the library rather than leaving it stranded out of libraryManga()
+  // (and so out of the catch-up work spec). This is the exact transition that
+  // let manga 340's new chapters be notified but never downloaded in the
+  // background: the row stayed '0' forever, invisible to the worker's spec,
+  // while the foreground reconciler (which reads the row directly) kept
+  // downloading it. See setKeepRule.
+  test('applying a keep rule to a removed row re-admits it to the library',
+      () async {
     await seed(2, inLibraryAt: '0'); // already stamped removed
     await db.setKeepRule(2, OfflineKeepRule.nUnread, 5);
-    expect(await db.keepRuleMangaAbsentFromLibrary({1}), isEmpty);
+
+    // The '0' sentinel is cleared to NULL ("in library, add-date unknown").
+    expect((await db.mangaById(2))!.inLibraryAt, isNull);
+    // So it is back in the library view the spec is built from...
+    expect((await db.libraryManga()).map((m) => m.id).toSet(), contains(2));
+    // ...and, being a genuinely in-library kept series absent from a later
+    // partial fetch, it is now (correctly) surfaced as protected/stranded.
+    expect(await db.keepRuleMangaAbsentFromLibrary({1}), [2]);
   });
 
   test('Last Read offline uses the synced manga-level value when no chapter '

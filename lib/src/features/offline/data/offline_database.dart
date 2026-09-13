@@ -712,12 +712,28 @@ class OfflineDatabase extends _$OfflineDatabase {
       );
 
   Future<void> setKeepRule(int mangaId, OfflineKeepRule rule, int count) =>
-      (update(offlineMangas)..where((t) => t.id.equals(mangaId))).write(
-        OfflineMangasCompanion(
-          keepRule: Value(rule),
-          keepUnreadCount: Value(count),
-        ),
-      );
+      transaction(() async {
+        await (update(offlineMangas)..where((t) => t.id.equals(mangaId))).write(
+          OfflineMangasCompanion(
+            keepRule: Value(rule),
+            keepUnreadCount: Value(count),
+          ),
+        );
+        // A keep rule is an explicit "keep this offline" — it must re-admit a
+        // row an earlier prune stamped '0' (removed) while the rule was still
+        // off. Left in place, '0' hides the manga from [libraryManga] and so
+        // from the catch-up work spec, stranding its new chapters in the
+        // background download path (they only land on a foreground reconcile,
+        // which reads the row directly). Clear the sentinel back to NULL ("in
+        // library, add-date unknown"); a later library sync restores the real
+        // timestamp.
+        if (rule != OfflineKeepRule.off) {
+          await (update(offlineMangas)..where(
+                (t) => t.id.equals(mangaId) & t.inLibraryAt.equals('0'),
+              ))
+              .write(const OfflineMangasCompanion(inLibraryAt: Value(null)));
+        }
+      });
 
   Future<void> setChapterPinned(int chapterId, bool pinned) =>
       (update(offlineChapters)..where((t) => t.id.equals(chapterId))).write(
@@ -1176,6 +1192,16 @@ class OfflineDatabase extends _$OfflineDatabase {
               (t) => t.inLibraryAt.equals('0').not() | t.inLibraryAt.isNull(),
             )
             ..orderBy([(t) => OrderingTerm(expression: t.title)]))
+          .get();
+
+  /// Every manga carrying an active keep rule, regardless of [inLibraryAt] —
+  /// the reconciler's view, not [libraryManga]'s. The catch-up work spec unions
+  /// this in so a kept series a prune stamped '0' (or whose rule was turned on
+  /// after the stamp) still reaches the background download path, instead of
+  /// only ever downloading on a foreground reconcile that reads the row direct.
+  Future<List<OfflineManga>> keepRuleManga() =>
+      (select(offlineMangas)
+            ..where((t) => t.keepRule.equalsValue(OfflineKeepRule.off).not()))
           .get();
 
   Future<bool> hasCatalogData() async =>
