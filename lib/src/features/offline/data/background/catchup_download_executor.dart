@@ -77,6 +77,15 @@ Future<bool> runCatchupDownloads({
   var needsBackfill = spec.keepRuleMangaIds.difference(
     ledger.backfilledMangaIds,
   );
+  // Only the manga this run will actually touch — the union of the ledger's
+  // pending obligations and the backfill set. The full keep-rule scope is a
+  // ~100-id wall of noise every wake; a missing kept series now surfaces at the
+  // point it matters instead (the download resolution's `droppedOutOfScope`).
+  final workMangaIds = <int>{
+    ...ledger.pendingDownloads.values,
+    ...ledger.pendingServerFetch.values,
+    ...needsBackfill,
+  };
   recordDiagnostic(
     '[${DateTime.now().toIso8601String()}] offline-catchup: run-started '
     'pendingDownloads=${ledger.pendingDownloads.length} '
@@ -85,10 +94,8 @@ Future<bool> runCatchupDownloads({
     'pendingDownloadIds=[${ledger.pendingDownloads.keys.join(',')}] '
     'pendingServerFetchIds=[${ledger.pendingServerFetch.keys.join(',')}] '
     'needsBackfillIds=[${needsBackfill.join(',')}] '
-    // The background download scope for this run. A new chapter whose manga is
-    // absent here is invisible to both the resolution cursor and backfill —
-    // if a kept series is missing, the spec (a foreground snapshot) is stale.
-    'keepRuleMangaIds=[${spec.keepRuleMangaIds.join(',')}]\n',
+    'keepRuleMangaCount=${spec.keepRuleMangaIds.length} '
+    'workMangaIds=[${workMangaIds.join(',')}]\n',
   );
   if (ledger.pendingDownloads.isEmpty &&
       ledger.pendingServerFetch.isEmpty &&
