@@ -210,6 +210,13 @@ class OfflineSync {
   /// partial/failed fetch — so a null there means this never runs at all.
   Future<void> pruneRemovedLibraryManga(List<MangaDto> serverLibrary) async {
     if (serverLibrary.isEmpty) return;
+    // Repair stale '0' stamps on manga that are still in the library: a
+    // previous truncated fetch may have marked them as removed. The real
+    // server timestamp is available from the complete fetch, so we restore it
+    // exactly (not just clear to null) before stamping the genuinely absent.
+    await _db.restoreLibraryTimestamps({
+      for (final m in serverLibrary) m.id: m.inLibraryAt,
+    });
     await _db.markNotInLibrary({for (final m in serverLibrary) m.id});
     await _db.purgeRemovedLibraryManga();
     await onSynced?.call();
