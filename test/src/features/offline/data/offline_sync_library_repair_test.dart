@@ -62,15 +62,31 @@ void main() {
   tearDown(() => db.close());
 
   group('pruneRemovedLibraryManga', () {
-    test('repairs stranded "0" stamp with the real server timestamp', () async {
-      // Manga 1: incorrectly stamped '0' by a previous truncated-page fetch.
-      await seedManga(1, inLibraryAt: '0');
+    test('repairs a stranded removed-sentinel stamp with the real server '
+        'timestamp', () async {
+      // Manga 1: incorrectly stamped removed by a previous truncated-page
+      // fetch.
+      await seedManga(1, inLibraryAt: kLibraryRemovedSentinel);
 
       await OfflineSync(db).pruneRemovedLibraryManga(
         [_serverManga(1, inLibraryAt: '1699000000000')],
       );
 
       expect(await inLibraryAtOf(1), '1699000000000');
+    });
+
+    test('repairs a stranded removed-sentinel stamp even when the server\'s '
+        'real value is literal "0" (manga predating the server tracking '
+        'this field) — the sentinel is -1, not 0, so it no longer collides',
+        () async {
+      await seedManga(1, inLibraryAt: kLibraryRemovedSentinel);
+
+      await OfflineSync(db).pruneRemovedLibraryManga(
+        [_serverManga(1, inLibraryAt: '0')],
+      );
+
+      expect(await inLibraryAtOf(1), '0');
+      expect((await db.libraryManga()).map((m) => m.id), contains(1));
     });
 
     test('does not overwrite a real existing timestamp for present manga',
@@ -81,7 +97,8 @@ void main() {
         [_serverManga(1, inLibraryAt: '9999999999999')],
       );
 
-      // Only '0' stamps are repaired; a real timestamp must not be overwritten.
+      // Only removed-sentinel stamps are repaired; a real timestamp must not
+      // be overwritten.
       expect(await inLibraryAtOf(1), '1699000000000');
     });
 
@@ -94,12 +111,13 @@ void main() {
         [_serverManga(1, inLibraryAt: '1699000000000')],
       );
 
-      // Manga 2 had no downloads, so it is deleted entirely after the '0' stamp.
+      // Manga 2 had no downloads, so it is deleted entirely after the
+      // removed-sentinel stamp.
       expect(await inLibraryAtOf(2), isNull);
     });
 
     test('repair and stamp+purge happen together in one call', () async {
-      await seedManga(1, inLibraryAt: '0');             // stranded — should be repaired
+      await seedManga(1, inLibraryAt: kLibraryRemovedSentinel); // stranded — should be repaired
       await seedManga(2, inLibraryAt: '1700000000000'); // present — unchanged
       await seedManga(3, inLibraryAt: '1700000001000'); // absent, no downloads — purged
 
@@ -115,9 +133,9 @@ void main() {
   });
 
   group('libraryManga() after repair', () {
-    test('returns manga whose "0" stamp was repaired', () async {
-      // Manga with '0' is invisible to libraryManga().
-      await seedManga(1, inLibraryAt: '0');
+    test('returns manga whose removed-sentinel stamp was repaired', () async {
+      // Manga with the removed sentinel is invisible to libraryManga().
+      await seedManga(1, inLibraryAt: kLibraryRemovedSentinel);
       expect(await db.libraryManga(), isEmpty);
 
       await OfflineSync(db).pruneRemovedLibraryManga(
@@ -131,20 +149,21 @@ void main() {
   });
 
   group('markNotInLibrary (unit)', () {
-    test('stamps "0" on every manga not in the provided set', () async {
+    test('stamps the removed sentinel on every manga not in the provided '
+        'set', () async {
       await seedManga(1, inLibraryAt: '1699000000000');
       await seedManga(2, inLibraryAt: '1700000000000');
 
       await db.markNotInLibrary({1});
 
       expect(await inLibraryAtOf(1), '1699000000000'); // in set — untouched
-      expect(await inLibraryAtOf(2), '0');             // not in set — stamped
+      expect(await inLibraryAtOf(2), kLibraryRemovedSentinel); // not in set — stamped
     });
   });
 
   group('restoreLibraryTimestamps (unit)', () {
-    test('only touches rows that carry "0"', () async {
-      await seedManga(1, inLibraryAt: '0');
+    test('only touches rows that carry the removed sentinel', () async {
+      await seedManga(1, inLibraryAt: kLibraryRemovedSentinel);
       await seedManga(2, inLibraryAt: '1699000000000');
 
       await db.restoreLibraryTimestamps({
@@ -161,7 +180,8 @@ void main() {
 
       await db.restoreLibraryTimestamps({1: '1699000000000'});
 
-      expect(await inLibraryAtOf(1), isNull); // null is not '0', must stay null
+      // null is not the removed sentinel, must stay null
+      expect(await inLibraryAtOf(1), isNull);
     });
   });
 }
