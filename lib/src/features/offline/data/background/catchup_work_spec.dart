@@ -29,6 +29,8 @@ class CatchupMangaSpec {
     this.chapterGenerations = const {},
     this.serverFetchAttempts = const {},
     this.failedChapterIds = const {},
+    this.chapterSortMode,
+    this.chapterSortReverse,
   });
 
   final int mangaId;
@@ -38,6 +40,14 @@ class CatchupMangaSpec {
   final Set<int> pinnedChapterIds;
   final Set<int> failedChapterIds;
   final Map<int, int> serverFetchAttempts;
+
+  /// The manga's own webUI_sortBy/webUI_reverse meta, mirrored from
+  /// OfflineMangas.chapterSortMode/chapterSortReverse. Null means no such
+  /// meta is set (or it's Tsumiru's own `alphabetical` mode, which has no
+  /// narrative-progression meaning) — the keep-window then falls back to its
+  /// pre-existing chapterNumber-else-chapterIndex ranking.
+  final ChapterSortAxis? chapterSortMode;
+  final bool? chapterSortReverse;
 
   /// Download generation per chapter, for the ones that have been deleted at
   /// least once. Staging the worker writes has to carry the generation its row
@@ -63,6 +73,8 @@ class CatchupMangaSpec {
     'serverFetchAttempts': {
       for (final e in serverFetchAttempts.entries) '${e.key}': e.value,
     },
+    'chapterSortMode': chapterSortMode?.name,
+    'chapterSortReverse': chapterSortReverse,
   };
 
   factory CatchupMangaSpec.fromJson(Map<String, Object?> j) => CatchupMangaSpec(
@@ -90,6 +102,8 @@ class CatchupMangaSpec {
       for (final e in (j['gens'] as Map? ?? const {}).entries)
         ?int.tryParse('${e.key}'): (e.value as num).toInt(),
     },
+    chapterSortMode: ChapterSortAxis.values.asNameMap()[j['chapterSortMode']],
+    chapterSortReverse: j['chapterSortReverse'] as bool?,
   );
 }
 
