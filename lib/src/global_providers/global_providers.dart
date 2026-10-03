@@ -142,6 +142,28 @@ GraphQLClient graphQlClient(Ref ref) {
       retries: retryCount,
       retryDelay: Duration(milliseconds: retryDelayMs),
       isCurrentSession: isCurrentSession,
+      retryHeaders: authType != AuthType.uiLogin
+          ? null
+          : (headers) async {
+              const key = 'authorization';
+              final carriesToken = headers.entries.any(
+                (e) =>
+                    e.key.toLowerCase() == key && e.value.startsWith('Bearer '),
+              );
+              if (!carriesToken) return headers;
+              final token = await ref
+                  .read(authCoordinatorProvider.notifier)
+                  .usableUiAccessToken(
+                    gqlClient: () =>
+                        ref.read(unauthenticatedGraphQlClientProvider),
+                    trigger: 'request-retry',
+                  );
+              return {
+                for (final e in headers.entries)
+                  if (e.key.toLowerCase() != key) e.key: e.value,
+                if (token != null) 'Authorization': 'Bearer $token',
+              };
+            },
       onConnectionFailure: (request) async {
         if (!_isGraphQlRead(request)) return null;
         await ref.read(serverEndpointResolverProvider.notifier).refresh();
@@ -184,30 +206,26 @@ GraphQLClient graphQlClient(Ref ref) {
       isCurrentSession: isCurrentSession,
       authType: () => authType,
       getHeaders: () async {
-        // A token already known to be expired (or about to be) is refreshed
-        // before the request instead of after its 401: at launch after a
-        // pause, every early request otherwise went out, was rejected, and
-        // waited on the same refresh to be retried. Refreshing early costs
-        // nothing (the refresh token isn't rotated) and joins any refresh
-        // already in flight. A failed one sends the current token, as before.
+        // ui_login requests are authorised up front: a token expired or about
+        // to be is refreshed before the request (joining any refresh in
+        // flight), and one that has expired and can't be refreshed stops the
+        // request here instead of sending it to be rejected.
+        // See AuthCoordinator.usableUiAccessToken.
+        final Map<String, String>? base;
         if (authType == AuthType.uiLogin) {
-          try {
-            await ref
-                .read(authCoordinatorProvider.notifier)
-                .refreshUiAccessTokenIfDue(
-                  gqlClient: ref.read(unauthenticatedGraphQlClientProvider),
-                  trigger: 'request-ahead',
-                );
-          } catch (_) {}
+          final token = await ref
+              .read(authCoordinatorProvider.notifier)
+              .usableUiAccessToken(
+                gqlClient: () => ref.read(unauthenticatedGraphQlClientProvider),
+                trigger: 'request-ahead',
+              );
+          base = token == null ? null : {'Authorization': 'Bearer $token'};
+        } else {
+          // Read via `.future` defensively in case a caller invokes a GraphQL
+          // operation before main()'s eager preload finishes.
+          final snapshot = await ref.read(authCredentialsStoreProvider.future);
+          base = snapshot.simpleLoginCookieHeader;
         }
-        // Synchronously read the cached snapshot — populated at startup
-        // by the eager `await container.read(...future)` in main(). We
-        // read via `.future` defensively in case a caller invokes a
-        // GraphQL operation before the preload finishes.
-        final snapshot = await ref.read(authCredentialsStoreProvider.future);
-        final base = authType == AuthType.simpleLogin
-            ? snapshot.simpleLoginCookieHeader
-            : snapshot.uiAuthorizationHeader;
         final custom = ref.read(customHttpHeadersProvider).value ?? const {};
         if (base == null) {
           return custom.isEmpty ? null : Map<String, String>.from(custom);
@@ -338,8 +356,10 @@ GraphQLClient graphQlClient(Ref ref) {
 /// stored one — so without [refreshIfDue] a session opened after a pause lost
 /// its live updates (and the library re-read they trigger) entirely.
 ///
-/// A failed refresh still sends the current token: blocking the connection
-/// would only trade a visitor socket for none.
+/// A failed refresh still opens the connection, as a visitor: blocking it
+/// would only trade a visitor socket for none. The expired token itself is
+/// not sent, since the server can only reject it; the socket reconnects once
+/// a live token lands (`reconnect reason=visitor-bind`).
 Future<Map<String, dynamic>> uiLoginSocketPayload({
   required bool Function() isCurrentSession,
   required Future<void> Function() refreshIfDue,
@@ -362,10 +382,14 @@ Future<Map<String, dynamic>> uiLoginSocketPayload({
     _wsAuthLog('connect-init aborted=session-changed-after');
     throw StateError('Authentication session changed');
   }
-  _wsAuthLog('connect-init ${describeSocketToken(token)}');
-  return (token == null || token.isEmpty)
-      ? <String, dynamic>{}
-      : <String, dynamic>{'Authorization': token};
+  final live = socketTokenIsLive(token);
+  _wsAuthLog(
+    'connect-init ${describeSocketToken(token)}'
+    '${live || token == null || token.isEmpty ? '' : ' withheld=expired'}',
+  );
+  return live
+      ? <String, dynamic>{'Authorization': token!}
+      : <String, dynamic>{};
 }
 
 /// `expIn=<s>` for the token a socket authenticates with (negative: the
